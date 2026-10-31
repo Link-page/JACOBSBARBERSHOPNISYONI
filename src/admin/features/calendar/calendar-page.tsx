@@ -96,11 +96,12 @@ export function CalendarPage() {
           range={gridRange}
           onEmptyClick={(d, time, barberId) => newAt(d, time, barberId)}
           onAppointmentClick={sheets.showAppointment}
+          onBlockClick={sheets.showBlock}
         />
       ) : (
         <div className="flex flex-col gap-4">
           {view === 'day' && <DayStrip days={visibleDays('week', date)} value={date} today={today} onChange={(d) => goTo({ date: d })} />}
-          <PhoneAgenda days={days} appointments={list} blocks={blockList} onAppointment={sheets.showAppointment} />
+          <PhoneAgenda days={days} appointments={list} blocks={blockList} onAppointment={sheets.showAppointment} onBlock={sheets.showBlock} />
         </div>
       )}
     </div>

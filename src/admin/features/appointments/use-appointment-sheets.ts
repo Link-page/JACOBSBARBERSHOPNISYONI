@@ -1,12 +1,13 @@
 import { createContext, useContext } from 'react'
 
-import type { Appointment } from '../../data/types'
+import type { Appointment, TimeBlock } from '../../data/types'
 import type { AppointmentPrefill } from './appointment-form-sheet'
 
 export type SheetControls = {
   newAppointment: (prefill: AppointmentPrefill) => void
   showAppointment: (appointment: Appointment) => void
   blockTime: (date: string) => void
+  showBlock: (block: TimeBlock) => void
   newCustomer: () => void
 }
 

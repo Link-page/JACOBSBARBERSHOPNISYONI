@@ -17,6 +17,7 @@ type TimeGridProps = {
   range: { start: number; end: number }
   onEmptyClick: (date: string, time: string, barberId: string | null) => void
   onAppointmentClick: (appointment: Appointment) => void
+  onBlockClick: (block: TimeBlock) => void
 }
 
 const PX_PER_MINUTE = 1.1
@@ -26,7 +27,7 @@ const minutesOf = (iso: string) => {
 }
 
 /** Desktop day/week grid: hours down the side, one column per barber or day. */
-export function TimeGrid({ columns, appointments, blocks, range, onEmptyClick, onAppointmentClick }: TimeGridProps) {
+export function TimeGrid({ columns, appointments, blocks, range, onEmptyClick, onAppointmentClick, onBlockClick }: TimeGridProps) {
   const now = useNow(60_000)
   const height = (range.end - range.start) * PX_PER_MINUTE
   const hours = Array.from({ length: Math.ceil((range.end - range.start) / 60) }, (_, i) => range.start + i * 60)
@@ -73,14 +74,21 @@ export function TimeGrid({ columns, appointments, blocks, range, onEmptyClick, o
                   const sameDayEnd = dayKey(new Date(b.endsAt)) === column.date
                   const pos = place(sameDayStart ? b.startsAt : `${column.date}T00:00:00`, sameDayEnd ? b.endsAt : `${column.date}T23:59:00`)
                   return (
-                    <div
+                    <button
                       key={b.id}
+                      type="button"
                       title={b.reason || 'זמן חסום'}
-                      className="absolute inset-x-0 bg-[repeating-linear-gradient(135deg,var(--muted)_0_6px,transparent_6px_12px)]"
+                      aria-label={`זמן חסום: ${b.reason || 'ללא סיבה'}`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onBlockClick(b)
+                      }}
+                      className="absolute inset-x-0 flex items-start justify-end bg-[repeating-linear-gradient(135deg,var(--muted)_0_6px,transparent_6px_12px)] focus-visible:outline-2 focus-visible:outline-ring"
                       style={pos}
                     >
-                      <span className="m-1 inline-block rounded-full bg-card px-2 text-caption2 text-muted-foreground">{b.reason || 'חסום'}</span>
-                    </div>
+                      {/* Above appointment chips, at the end corner, so a block under a booking stays reachable. */}
+                      <span className="relative z-[5] m-1 max-w-[45%] truncate rounded-full bg-card px-2 text-caption2 text-muted-foreground ring-1 ring-border">{b.reason || 'חסום'}</span>
+                    </button>
                   )
                 })}
               {appointments

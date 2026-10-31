@@ -134,12 +134,13 @@ These steps are needed before the admin can be used for real.
 
    The deploy workflow validates both variables, then passes them to the build.
 
-7. **Local development against Supabase:** copy `.env.example` to `.env.local` and fill in the same two values. `.env.local` is git-ignored.
+7. **Local development against Supabase:** copy `.env.example` to `.env.local` and fill in the same two values. `.env.local` is git-ignored. `npm run check:env` confirms the values without printing them.
 
 ## Development
 
 ```bash
 npm run dev            # admin at http://localhost:5173/JACOBSBARBERSHOPNISYONI/admin/
+npm run check:env      # validates .env.local without printing it
 npm test               # unit tests
 npm run test:db        # database tests: needs a disposable Postgres 16, see below
 npm run test:stack     # integration tests: needs a local Supabase stack, see below
@@ -199,24 +200,114 @@ The same job also:
 
 Signing in to the **hosted** project as the owner and changing data there. That would need the owner's password in GitHub, which this project doesn't store. The same code paths run on the local stack, but the hosted project's own Auth settings, owner link and data are checked only by hand.
 
-### Manual owner check (hosted project)
+### Manual owner test (hosted project)
 
-Run the real admin locally with `.env.local` (Setup step 7), open http://localhost:5173/JACOBSBARBERSHOPNISYONI/admin/ and sign in as the owner. This uses live data, so give anything you create the name **בדיקה** and cancel it at the end.
+This runs the real admin on your own computer against the hosted project. Everything you do here is **real data**.
 
-1. **Owner access.** The dashboard greets Jacob, and the menu shows **הגדרות**, **צוות** and **טיפולים**. *צוות → יעקב → גישה לניהול* shows your email.
-2. **New appointment.** Create customer **בדיקה** with a test phone number and book tomorrow with Jacob. The appointment appears in the day and week calendar.
-3. **Double booking.** Try the same time again: the time is not offered, and typing it gives "השעה כבר לא פנויה".
-4. **Reschedule.** Move the appointment to another time. Its history shows the change.
-5. **Block time.** Block an hour: it disappears from the new-appointment times. Then remove the block.
-6. **Waiting list.** The page loads and is empty (customers can't join until the customer app is connected). **בדיקת הצעות שפגו** completes without an error.
-7. **Cancel.** Cancel the test appointment. The calendar shows it struck through as cancelled.
-8. **Signed out.** Sign out, then open `/admin/` in a private window. Only the sign-in screen appears, and a wrong password is rejected.
+#### 1. Run it
+
+You need Git and **Node.js 22.18 or newer** (Node 24 LTS is fine).
+
+1. **Get the development branch.**
+   - **First time:**
+     ```bash
+     git clone https://github.com/Link-page/JACOBSBARBERSHOPNISYONI.git
+     cd JACOBSBARBERSHOPNISYONI
+     git checkout claude/charming-dijkstra-md9hbb
+     ```
+   - **Existing copy:**
+     ```bash
+     git fetch origin
+     git checkout claude/charming-dijkstra-md9hbb
+     git pull
+     ```
+2. **Create `.env.local`** in the project folder. It holds only the Project URL and the **publishable** key (Setup step 1). Never put a secret key in it. The file is git-ignored.
+   ```
+   VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+   VITE_SUPABASE_ANON_KEY=sb_publishable_…
+   ```
+3. **Install dependencies and check the file.** The check refuses a secret key and never prints the values:
+   ```bash
+   npm ci
+   npm run check:env
+   ```
+   Expect `✓ Supabase build variables are valid (URL format OK, key type: publishable).`
+4. **Start the admin** with `npm run dev`, then open **http://localhost:5173/JACOBSBARBERSHOPNISYONI/admin/**. If Vite prints a different port, use that one.
+
+#### 2. Confirm it is the real database, not the prototype
+
+- **No prototype:** there is no gold "אב-טיפוס לפיתוח" banner. The first screen is **כניסת צוות**; the prototype never asks you to sign in.
+- **Your Supabase data:** after signing in, *Team* shows Jacob, and *Services* shows the six seeded services (תספורת הבית … תספורת ילדים), plus anything you added.
+- **Supabase dashboard:**
+  - after signing in, *Authentication → Users* shows a new *Last signed in* time for the owner
+  - after creating something, the row appears in *Table Editor* (`appointments`, `time_blocks`, `services`…)
+  - the change appears in `audit_log`, with your user as the actor
+
+#### 3. Sign in
+
+Enter the owner's email and password and press **כניסה**. The dashboard should greet **שלום, יעקב**.
+
+| You see | Meaning and fix |
+| --- | --- |
+| אימייל או סיסמה שגויים | Wrong email or password. If the password is unknown, ask before resetting it: a recovery email links to the Site URL (the admin isn't published yet), and the admin has no password-reset screen. |
+| כתובת האימייל של החשבון עוד לא אומתה | The account's email isn't confirmed. Click the link in the confirmation email. Supabase confirms the address even though the page it then opens isn't published yet. Then sign in again. |
+| אין גישה לניהול | Signed in, but the profile's role isn't `owner`. Repeat Setup step 4. |
+| אין חיבור לשרת | The computer can't reach Supabase. Check the connection and the URL in `.env.local`, then restart `npm run dev`. |
+| מערכת הניהול עוד לא חוברה / הגדרות השרת דורשות תיקון | `.env.local` is missing or wrong. Run `npm run check:env`, then restart `npm run dev`. |
+
+#### 4. Test checklist
+
+Use a free weekday afternoon **next week**, since Jacob works Sunday–Thursday 09:00–20:00. Name everything you create **בדיקה**. The customer app isn't connected yet, so no customer sees these changes, but they are stored for real.
+
+**Appointments**
+- [ ] *תור חדש* → *לקוח חדש*: create **בדיקה** with a test phone number → *שמירת לקוח*.
+- [ ] Pick Jacob, a service and the date; choose a free time → *קביעת התור*. The toast says *התור נקבע*, and the appointment shows in the day and week calendar.
+- [ ] **Double booking.** *תור חדש* again for the same customer, barber, service and date:
+  - the booked time is no longer offered
+  - typing it under *שעה אחרת* → *קביעת התור* shows *השעה כבר לא פנויה*
+- [ ] **Reschedule.** Open the appointment → *שינוי מועד* → pick a new time → *אישור המועד*. *היסטוריית שינויים* lists the change.
+- [ ] **Edit.** Change the notes → *שמירת שינויים*.
+- [ ] **Cancel.** *ביטול* → *ביטול התור*. It shows struck through as cancelled, and its time is offered again.
+- [ ] **Customer card.** *לקוחות*: search **בדיקה** and open it. The visits and cancelled appointment are listed. Add a staff note.
+
+**Schedule management**
+- [ ] **Block time.** *יומן* → *חסימה*: Jacob, 15:00–16:00, reason **בדיקה** → *חסימה*. The striped block appears, and *תור חדש* no longer offers 15:00 that day.
+- [ ] **Remove the block.** Tap the block (or its label) → *הסרת החסימה* → *הסרת החסימה*. The time is offered again.
+- [ ] **Closed day.** *הגדרות* → *ימים סגורים*: add a date next month with reason **בדיקה**. That day shows as closed in the month view. Remove it with the bin icon.
+- [ ] **Working hours.** *צוות* → *יעקב* → *שעות עבודה*: change one day's closing time → *שמירה* (*הפרטים נשמרו*). New-appointment times follow it. **Change it back** and save.
+- [ ] **Breaks.** In the same sheet, under *הפסקות קבועות*: *הוספת הפסקה* → save, then check the times. Remove it with its bin icon → save.
+
+**Services**
+- [ ] *טיפולים* → *טיפול חדש*: name **בדיקה**, 30 minutes, any price, *מבוצע על ידי* Jacob, *מוצג ללקוחות* **off** → *שמירה* (*הטיפול נשמר*).
+- [ ] Edit it: change the price → *שמירה*. The list shows the new price.
+- [ ] **Order.** Move it with its up arrow → *שמירת הסדר* (*הסדר נשמר*), then move it back down and save again.
+- [ ] Leave it **off**: services can't be deleted, only hidden.
+
+**Waiting list**
+
+The admin manages waiting-list requests, but only customers can create them. The customer app isn't connected yet, so the list is empty. The full flow (join → offer → hold → claim → expiry) is tested on the local Supabase stack and in the database tests.
+- [ ] *המתנה* loads without an error and shows *אין ממתינים*. The barber filter works.
+- [ ] *בדיקת הצעות שפגו* shows *הצעות שפגו הועברו הלאה*.
+- [ ] *הודעות ללקוחות* says no message provider is connected, so nothing is sent.
+
+**Access**
+- [ ] *יציאה* signs you out. Opening `/admin/` in a private window shows only the sign-in screen, and a wrong password shows *אימייל או סיסמה שגויים*.
+
+#### 5. What stays in the database afterwards
+
+The admin keeps a history, so some test records remain:
+- the customer **בדיקה**
+- the cancelled appointment
+- the hidden service **בדיקה**
+- their `audit_log` entries
+
+Blocks, closed days and breaks you removed are gone, and hours you changed back are as before. None of this is visible to customers.
 
 ## Before publishing
 
 **Must be done** before merging to `main`:
 
-1. **Manual owner check** above, on the hosted project.
+1. **Manual owner test** above, on the hosted project.
 2. **Auth settings** (Setup step 3):
    - public sign-up off
    - email confirmation on

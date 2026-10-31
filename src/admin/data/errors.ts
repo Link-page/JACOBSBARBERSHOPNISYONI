@@ -14,6 +14,8 @@ const messages: Record<string, string> = {
   slots_available: 'יש עדיין תורים פנויים ביום הזה.',
   day_closed: 'המספרה סגורה ביום הזה.',
   invalid_credentials: 'אימייל או סיסמה שגויים.',
+  email_not_confirmed: 'כתובת האימייל של החשבון עוד לא אומתה. לחצו על הקישור במייל האימות ונסו שוב.',
+  network: 'אין חיבור לשרת. בדקו את החיבור לאינטרנט ונסו שוב.',
   not_configured: 'השרת עדיין לא הוגדר.',
 }
 
@@ -32,6 +34,9 @@ export function toAdminError(error: unknown): AdminError {
   const code = Object.keys(messages).find((key) => text === key || text.includes(key))
   if (code) return new AdminError(code)
   if (/invalid login credentials/i.test(text)) return new AdminError('invalid_credentials')
+  if (/email not confirmed/i.test(text)) return new AdminError('email_not_confirmed')
+  // Chrome, Node, Firefox and Safari word a failed request differently.
+  if (/failed to fetch|fetch failed|networkerror|load failed/i.test(text)) return new AdminError('network')
   if (/permission denied|row-level security/i.test(text)) return new AdminError('forbidden')
   return new AdminError('unknown')
 }

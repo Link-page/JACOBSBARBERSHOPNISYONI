@@ -17,11 +17,13 @@ export function PhoneAgenda({
   appointments,
   blocks,
   onAppointment,
+  onBlock,
 }: {
   days: string[]
   appointments: Appointment[]
   blocks: TimeBlock[]
   onAppointment: (appointment: Appointment) => void
+  onBlock: (block: TimeBlock) => void
 }) {
   const { serviceName, barberName, barbers } = useCatalogue()
   const showBarber = barbers.filter((b) => b.active).length > 1
@@ -47,9 +49,15 @@ export function PhoneAgenda({
               <ol className="relative flex flex-col gap-2 border-s-2 border-border ps-4">
                 {items.map((item) =>
                   item.kind === 'block' ? (
-                    <li key={item.block.id} className="flex items-center gap-3 rounded-[16px] bg-[repeating-linear-gradient(135deg,var(--muted)_0_6px,transparent_6px_12px)] px-4 py-3 text-footnote text-muted-foreground">
-                      <Ban className="size-4" />
-                      {dateOf(item.block.startsAt) === date ? timeOf(item.block.startsAt) : '00:00'}–{dateOf(item.block.endsAt) === date ? timeOf(item.block.endsAt) : '24:00'} · {item.block.reason || 'זמן חסום'}
+                    <li key={item.block.id}>
+                      <button
+                        type="button"
+                        onClick={() => onBlock(item.block)}
+                        className="pressable flex w-full items-center gap-3 rounded-[16px] bg-[repeating-linear-gradient(135deg,var(--muted)_0_6px,transparent_6px_12px)] px-4 py-3 text-start text-footnote text-muted-foreground"
+                      >
+                        <Ban className="size-4" />
+                        {dateOf(item.block.startsAt) === date ? timeOf(item.block.startsAt) : '00:00'}–{dateOf(item.block.endsAt) === date ? timeOf(item.block.endsAt) : '24:00'} · {item.block.reason || 'זמן חסום'}
+                      </button>
                     </li>
                   ) : (
                     <li key={item.appointment.id}>
