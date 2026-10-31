@@ -237,7 +237,7 @@ You need Git and **Node.js 22.18 or newer** (Node 24 LTS is fine).
 #### 2. Confirm it is the real database, not the prototype
 
 - **No prototype:** there is no gold "אב-טיפוס לפיתוח" banner. The first screen is **כניסת צוות**; the prototype never asks you to sign in.
-- **Your Supabase data:** after signing in, *Team* shows Jacob, and *Services* shows the six seeded services (תספורת הבית … תספורת ילדים), plus anything you added.
+- **Your Supabase data:** after signing in, *צוות* shows Jacob, and *טיפולים* shows the six seeded services (תספורת הבית … תספורת ילדים), plus anything you added.
 - **Supabase dashboard:**
   - after signing in, *Authentication → Users* shows a new *Last signed in* time for the owner
   - after creating something, the row appears in *Table Editor* (`appointments`, `time_blocks`, `services`…)
@@ -245,7 +245,7 @@ You need Git and **Node.js 22.18 or newer** (Node 24 LTS is fine).
 
 #### 3. Sign in
 
-Enter the owner's email and password and press **כניסה**. The dashboard should greet **שלום, יעקב**.
+Enter the owner's email and password and press **כניסה**. The dashboard greets you by name (**שלום, …**: the profile's name, otherwise יעקב), and the menu includes **צוות**, **טיפולים** and **הגדרות**, which only the owner sees.
 
 | You see | Meaning and fix |
 | --- | --- |
