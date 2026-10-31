@@ -29,7 +29,7 @@ export default defineConfig({
     },
   },
   test: {
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'supabase/functions/_shared/**/*.test.ts'],
   },
   resolve: {
     alias: {
