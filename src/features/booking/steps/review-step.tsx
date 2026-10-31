@@ -1,8 +1,8 @@
 import { MapPin } from 'lucide-react'
 
 import type { Appointment } from '@/api'
-import { BarberAvatar } from '@/components/barber-avatar'
-import { barberById, serviceById } from '@/data/shop'
+import { BarberPortrait } from '@/components/barber-portrait'
+import { useCatalogue } from '@/catalogue/catalogue-context'
 import { formatTime, shortDate } from '@/lib/format'
 import { links } from '@/lib/links'
 
@@ -19,13 +19,14 @@ type ReviewStepProps = {
 }
 
 export function ReviewStep({ serviceId, barberId, anyBarber, date, time, previous }: ReviewStepProps) {
+  const { barberById, serviceById } = useCatalogue()
   const barber = barberById(barberId)
   const before = previous && new Date(previous.start)
 
   return (
     <div className="px-5 pt-4 pb-8">
       <div className="flex items-center gap-3.5">
-        <BarberAvatar barber={barber} className="size-14 text-[22px]" />
+        <BarberPortrait barber={barber} className="size-14 text-[22px]" />
         <div className="min-w-0 flex-1">
           <h2 className="truncate font-display text-title2 font-medium">{serviceById(serviceId).name}</h2>
           <p className="text-subhead text-muted-foreground">

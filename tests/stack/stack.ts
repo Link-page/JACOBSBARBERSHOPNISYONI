@@ -25,8 +25,13 @@ export const SERVICE = {
 } as const
 
 const options = { auth: { persistSession: false, autoRefreshToken: false } }
-const browserClient = () => createClient(stack.url, stack.publishableKey, options)
-const serviceClient = () => createClient(stack.url, stack.serviceKey, options)
+/** A browser-like client: publishable key, its own in-memory session. */
+export const browserClient = () => createClient(stack.url, stack.publishableKey, options)
+/** Test setup only (creating accounts, checking rows). */
+export const serviceClient = () => createClient(stack.url, stack.serviceKey, options)
+
+/** The local stack's email testing server (Mailpit), where confirmation emails land. */
+export const mailpitUrl = process.env.STACK_MAILPIT_URL || process.env.STACK_INBUCKET_URL || 'http://127.0.0.1:54324'
 
 export type Account = { id: string; email: string; password: string }
 export type Session = { db: SupabaseClient; api: ReturnType<typeof createSupabaseAdminApi> }

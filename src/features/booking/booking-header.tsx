@@ -2,7 +2,7 @@ import { ChevronLeft, X } from 'lucide-react'
 import { m } from 'motion/react'
 
 import { Button } from '@/components/ui/button'
-import { DrawerClose, DrawerTitle } from '@/components/ui/drawer'
+import { PanelClose, PanelTitle } from '@/components/responsive-panel'
 import { spring } from '@/lib/motion'
 
 import type { BookingFlow } from './use-booking-flow'
@@ -24,18 +24,18 @@ export function BookingHeader({ flow, title }: BookingHeaderProps) {
           )}
         </div>
         <div className="text-center">
-          <DrawerTitle className="font-display text-title3 font-medium">{title}</DrawerTitle>
+          <PanelTitle className="font-display text-title3 font-medium">{title}</PanelTitle>
           {!isTerminal && (
             <p className="text-caption text-muted-foreground tabular">
               שלב {index + 1} מתוך {steps.length}
             </p>
           )}
         </div>
-        <DrawerClose asChild>
+        <PanelClose asChild>
           <Button variant="glass" size="icon-lg" aria-label="סגירה">
             <X strokeWidth={2.4} />
           </Button>
-        </DrawerClose>
+        </PanelClose>
       </div>
 
       {!isTerminal && (

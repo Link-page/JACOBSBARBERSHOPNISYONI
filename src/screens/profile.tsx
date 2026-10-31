@@ -1,4 +1,4 @@
-import { AtSign, Bell, Check, MapPin, MessageCircle, Phone, Sparkles } from 'lucide-react'
+import { AtSign, Bell, Check, LogOut, Mail, MapPin, MessageCircle, Phone, Sparkles } from 'lucide-react'
 import { useMemo } from 'react'
 
 import { ListGroup, ListRow } from '@/components/list'
@@ -6,7 +6,11 @@ import { ScrollScreen } from '@/components/scroll-screen'
 import { SegmentedControl } from '@/components/segmented-control'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Switch } from '@/components/ui/switch'
-import { barberById, shop, user } from '@/data/shop'
+import { useAccount, useCustomer } from '@/account/account-context'
+import { backend } from '@/backend'
+import { useCatalogue } from '@/catalogue/catalogue-context'
+import { shop, user } from '@/data/shop'
+import { formatIlMobile } from '@/lib/phone'
 import { links } from '@/lib/links'
 import { cn } from '@/lib/utils'
 import { useApp } from '@/store/app-context'
@@ -14,35 +18,37 @@ import type { Appearance } from '@/store/types'
 
 export function ProfileScreen() {
   const { past, appearance, setAppearance, preferences, setPreference } = useApp()
+  const { barberById } = useCatalogue()
+  const profile = useCustomer()
 
   const stats = useMemo(() => {
-    const visits = past.filter((a) => a.status === 'booked')
+    // Visits that happened: marked completed by the shop, or past and never cancelled.
+    const visits = past.filter((a) => a.status === 'completed' || a.status === 'booked')
     const counts = new Map<string, number>()
     for (const v of visits) counts.set(v.barberId, (counts.get(v.barberId) ?? 0) + 1)
     const favorite = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0]
     return { visits: visits.length, favorite: favorite ? barberById(favorite).name : '—' }
-  }, [past])
+  }, [past, barberById])
 
   return (
     <ScrollScreen title="פרופיל">
       <div className="mt-5 flex flex-col items-center rounded-[28px] bg-card px-5 pt-7 pb-5 text-center shadow-elevation">
         <Avatar aria-hidden className="size-[88px]">
-          <AvatarFallback className="text-[38px]">{user.initial}</AvatarFallback>
+          <AvatarFallback className="text-[38px]">{profile.fullName.charAt(0)}</AvatarFallback>
         </Avatar>
-        <p className="mt-3.5 font-display text-title2 font-medium">
-          {user.firstName} {user.lastName}
-        </p>
+        <p className="mt-3.5 font-display text-title2 font-medium">{profile.fullName}</p>
         <p className="text-subhead text-muted-foreground tabular" dir="ltr">
-          {user.phone}
+          {formatIlMobile(profile.phone)}
         </p>
         <dl className="mt-5 grid w-full grid-cols-3 divide-x divide-border rounded-[18px] bg-elevated py-3 dark:bg-muted">
           <Stat label="ביקורים" value={String(stats.visits)} />
           <Stat label="ספר קבוע" value={stats.favorite} />
-          <Stat label="חבר מאז" value={user.memberSince.split(' ')[1]} />
+          <Stat label="חבר מאז" value={String(new Date(profile.memberSince).getFullYear())} />
         </dl>
       </div>
 
-      <LoyaltyCard />
+      {/* The stamp card has no backend yet: shown only in the on-device demo, never as a promise to real customers. */}
+      {!backend.booking.connected && <LoyaltyCard />}
 
       <ListGroup header="מראה" className="mt-9">
         <div className="p-3">
@@ -87,10 +93,24 @@ export function ProfileScreen() {
         <ListRow icon={MapPin} title="ניווט למספרה" subtitle={links.fullAddress} chevron href={links.directions} />
       </ListGroup>
 
+      <AccountSection />
+
       <p className="mt-9 flex justify-center gap-2 text-footnote text-muted-foreground">
         <span className="wordmark">{shop.name}</span>· גרסה 1.0
       </p>
     </ScrollScreen>
+  )
+}
+
+/** Signed-in email and sign-out (real accounts only; the demo has no sign-in). */
+function AccountSection() {
+  const { state, requiresSignIn, signOut } = useAccount()
+  if (!requiresSignIn || state.status !== 'ready') return null
+  return (
+    <ListGroup header="חשבון" className="mt-9">
+      <ListRow icon={Mail} title="אימייל" value={<bdi dir="ltr">{state.email}</bdi>} />
+      <ListRow icon={LogOut} title={<span className="text-destructive">התנתקות</span>} onClick={() => void signOut()} />
+    </ListGroup>
   )
 }
 

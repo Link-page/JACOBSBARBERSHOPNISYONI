@@ -1,11 +1,12 @@
 import { Scissors, UserRound } from 'lucide-react'
 
-import { barberById, serviceById } from '@/data/shop'
+import { useCatalogue } from '@/catalogue/catalogue-context'
 import { formatDuration } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 /** The service and barber being booked, as quiet chips above the calendar and time list. */
 export function BookingContext({ serviceId, barberId, className }: { serviceId: string; barberId: string; className?: string }) {
+  const { barberById, serviceById } = useCatalogue()
   const service = serviceById(serviceId)
   const chips = [
     { icon: Scissors, label: `${service.name} · ${formatDuration(service.duration)}` },

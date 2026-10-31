@@ -1,15 +1,18 @@
 import { Users } from 'lucide-react'
 import type { ComponentProps, ReactNode } from 'react'
 
-import { BarberAvatar } from '@/components/barber-avatar'
+import { useCatalogue } from '@/catalogue/catalogue-context'
+
+import { BarberPortrait } from '@/components/barber-portrait'
 import { SelectionRing } from '@/components/selection-ring'
-import { barbers } from '@/data/shop'
 import { NextFreeLabel } from '@/components/next-free-label'
 import { cn } from '@/lib/utils'
 
-type BarberStepProps = { value?: string; duration: number; onChange: (id: string) => void }
+type BarberStepProps = { value?: string; serviceId: string; duration: number; onChange: (id: string) => void }
 
-export function BarberStep({ value, duration, onChange }: BarberStepProps) {
+export function BarberStep({ value, serviceId, duration, onChange }: BarberStepProps) {
+  // Only barbers who perform the chosen service.
+  const barbers = useCatalogue().barbers.filter((b) => b.serviceIds.includes(serviceId))
   return (
     <div className="grid grid-cols-2 gap-3 px-5 pt-4 pb-8">
       <OptionCard selected={value === 'any'} onClick={() => onChange('any')} className="col-span-2 items-center gap-3.5 text-start">
@@ -18,7 +21,7 @@ export function BarberStep({ value, duration, onChange }: BarberStepProps) {
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-headline font-semibold">כל ספר פנוי</span>
-          <NextFreeLabel barberId="any" duration={duration} prefix="הקרוב ביותר · " className="text-footnote text-muted-foreground" />
+          <NextFreeLabel serviceId={serviceId} barberId="any" duration={duration} prefix="הקרוב ביותר · " className="text-footnote text-muted-foreground" />
         </span>
       </OptionCard>
       {barbers.map((barber) => (
@@ -28,10 +31,11 @@ export function BarberStep({ value, duration, onChange }: BarberStepProps) {
           onClick={() => onChange(barber.id)}
           className="flex-col items-center pt-5 text-center"
         >
-          <BarberAvatar barber={barber} className="size-16 text-[26px]" />
+          <BarberPortrait barber={barber} className="size-16 text-[26px]" />
           <span className="mt-3 text-headline font-semibold">{barber.name}</span>
-          <span className="line-clamp-1 text-footnote text-muted-foreground">{barber.specialties.join(' · ')}</span>
+          <span className="line-clamp-1 text-footnote text-muted-foreground">{barber.bio}</span>
           <NextFreeLabel
+            serviceId={serviceId}
             barberId={barber.id}
             duration={duration}
             className="mt-3 rounded-full bg-muted px-2.5 py-1 text-caption font-semibold tabular"

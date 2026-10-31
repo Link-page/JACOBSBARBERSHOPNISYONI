@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { EmptyState, ListSkeleton } from '../../components/empty-state'
 import { PageHeader } from '../../components/page-header'
 import { useAdminQuery } from '../../data/api-context'
-import { useIsDesktop } from '../../lib/use-media-query'
+import { useIsDesktop } from '@/hooks/use-media-query'
 import { useAppointmentSheets } from '../appointments/use-appointment-sheets'
 import { CustomerDetailSheet } from './customer-detail-sheet'
 

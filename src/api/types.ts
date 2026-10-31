@@ -6,7 +6,8 @@ export type Appointment = {
   barberId: string
   /** ISO timestamp of the start time. */
   start: string
-  status: 'booked' | 'cancelled'
+  /** completed / no_show are set by the shop after the visit. */
+  status: 'booked' | 'cancelled' | 'completed' | 'no_show'
 }
 
 export type NewAppointment = Pick<Appointment, 'serviceId' | 'barberId' | 'start'>
@@ -34,8 +35,8 @@ export type TimeSlot = {
 
 export type NextSlot = { date: string; time: string; barberId: string }
 
-/** What's being booked: a barber id (or "any") and the service length in minutes. */
-export type AvailabilityQuery = { barberId: string; duration: number }
+/** What's being booked: the service, a barber id (or "any") and the service length in minutes. */
+export type AvailabilityQuery = { serviceId: string; barberId: string; duration: number }
 
 export type WaitlistRequest = { date: string; barberId: string; serviceId: string }
 

@@ -12,7 +12,8 @@ export type AppContextValue = {
   past: Appointment[]
   /** Adds a new appointment or replaces one with the same id. */
   saveAppointment: (appointment: Appointment) => void
-  cancel: (id: string) => void
+  /** Cancels on the server; resolves with the reason when it is refused. */
+  cancel: (id: string) => Promise<string | null>
 
   appearance: Appearance
   setAppearance: (appearance: Appearance) => void

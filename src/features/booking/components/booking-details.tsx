@@ -1,4 +1,4 @@
-import { barberById, serviceById } from '@/data/shop'
+import { useCatalogue } from '@/catalogue/catalogue-context'
 import { endTime, formatDuration, formatPrice, fullDate } from '@/lib/format'
 import { fromDayKey } from '@/lib/date'
 import { cn } from '@/lib/utils'
@@ -14,6 +14,7 @@ type BookingDetailsProps = {
 
 /** Label/value summary of a booking or waiting-list request. */
 export function BookingDetails({ serviceId, barberId, date, time, className }: BookingDetailsProps) {
+  const { barberById, serviceById } = useCatalogue()
   const service = serviceById(serviceId)
   const rows = [
     { label: 'טיפול', value: service.name },

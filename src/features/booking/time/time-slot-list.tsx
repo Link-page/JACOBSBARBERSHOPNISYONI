@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 
 import type { TimeSlot } from '@/api'
 import { groupByDayPart } from '@/booking/day-parts'
-import { barberById } from '@/data/shop'
+import { useCatalogue } from '@/catalogue/catalogue-context'
 
 import { DayPartSection } from './day-part-section'
 import { TimeSlotRow } from './time-slot-row'
@@ -18,6 +18,7 @@ type TimeSlotListProps = {
 
 /** Vertically scrolling list of open times, grouped into morning, afternoon and evening. */
 export function TimeSlotList({ slots, duration, selected, barberId, onSelect }: TimeSlotListProps) {
+  const { barberById } = useCatalogue()
   const parts = useMemo(() => groupByDayPart(slots), [slots])
   let index = 0
 

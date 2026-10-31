@@ -11,5 +11,5 @@ export function useMediaQuery(query: string) {
   )
 }
 
-/** Desktop gets the sidebar layout; below this width the app behaves like a phone app. */
+/** Desktop layouts (admin sidebar, customer top navigation); below this width both behave like phone apps. */
 export const useIsDesktop = () => useMediaQuery('(min-width: 1024px)')

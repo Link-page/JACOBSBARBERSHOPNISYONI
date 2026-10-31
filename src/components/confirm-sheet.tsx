@@ -1,13 +1,5 @@
 import { Button } from '@/components/ui/button'
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from '@/components/ui/drawer'
+import { PanelClose, PanelDescription, PanelTitle, ResponsivePanel } from '@/components/responsive-panel'
 
 type ConfirmSheetProps = {
   open: boolean
@@ -30,27 +22,25 @@ export function ConfirmSheet({
   onConfirm,
 }: ConfirmSheetProps) {
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent>
-        <DrawerHeader className="items-center pt-6 text-center">
-          <DrawerTitle className="text-title3 font-bold">{title}</DrawerTitle>
-          <DrawerDescription className="max-w-[300px] text-balance">{message}</DrawerDescription>
-        </DrawerHeader>
-        <DrawerFooter className="pt-7">
-          <Button
-            variant="destructive"
-            onClick={() => {
-              onConfirm()
-              onOpenChange(false)
-            }}
-          >
-            {confirmLabel}
-          </Button>
-          <DrawerClose asChild>
-            <Button variant="secondary">{cancelLabel}</Button>
-          </DrawerClose>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
+    <ResponsivePanel open={open} onOpenChange={onOpenChange} dialogClassName="w-[min(420px,calc(100vw-48px))]">
+      <div className="flex flex-col items-center gap-1 px-5 pt-6 text-center">
+        <PanelTitle className="text-title3 font-bold">{title}</PanelTitle>
+        <PanelDescription className="max-w-[300px] text-balance">{message}</PanelDescription>
+      </div>
+      <div className="flex flex-col gap-2 px-5 pt-7 pb-[max(env(safe-area-inset-bottom),20px)]">
+        <Button
+          variant="destructive"
+          onClick={() => {
+            onConfirm()
+            onOpenChange(false)
+          }}
+        >
+          {confirmLabel}
+        </Button>
+        <PanelClose asChild>
+          <Button variant="secondary">{cancelLabel}</Button>
+        </PanelClose>
+      </div>
+    </ResponsivePanel>
   )
 }

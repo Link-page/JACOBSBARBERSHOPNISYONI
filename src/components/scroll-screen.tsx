@@ -26,7 +26,7 @@ export function ScrollScreen({ title, largeTitle, eyebrow, accessory, children }
       <m.div
         aria-hidden
         style={{ opacity: barOpacity }}
-        className="glass-bar pointer-events-none absolute inset-x-0 top-0 z-20 pt-safe"
+        className="glass-bar pointer-events-none absolute inset-x-0 top-0 z-20 pt-safe lg:hidden"
       >
         <div className="flex h-11 items-center justify-center font-display text-headline font-medium">{title}</div>
       </m.div>
@@ -36,7 +36,8 @@ export function ScrollScreen({ title, largeTitle, eyebrow, accessory, children }
         layoutScroll
         className="scrollbar-none absolute inset-0 overflow-y-auto overflow-x-hidden overscroll-y-contain"
       >
-        <div className="px-5 pt-safe pb-40">
+        {/* Centred column on wide screens; room for the tab bar below on phones and tablets. */}
+        <div className="mx-auto w-full max-w-6xl px-5 pt-safe pb-40 md:px-8 lg:px-10 lg:pt-6 lg:pb-20">
           <header className="flex items-end justify-between gap-4 pt-5">
             <m.div style={{ opacity: titleOpacity, scale: titleScale }} className="min-w-0 ltr:origin-left rtl:origin-right">
               {eyebrow && <p className="mb-1 text-footnote font-medium text-muted-foreground">{eyebrow}</p>}
@@ -51,7 +52,7 @@ export function ScrollScreen({ title, largeTitle, eyebrow, accessory, children }
       {/* Scroll-edge effect: content dissolves before it reaches the tab bar. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-36 bg-linear-to-t from-background from-15% via-background/75 to-transparent"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-36 bg-linear-to-t from-background from-15% via-background/75 to-transparent lg:hidden"
       />
     </div>
   )

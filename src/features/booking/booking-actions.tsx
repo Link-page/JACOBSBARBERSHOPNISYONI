@@ -1,8 +1,8 @@
 import type { Appointment, TimeSlot } from '@/api'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
-import { barberById, serviceById } from '@/data/shop'
-import { addToCalendar } from '@/lib/calendar'
+import { useCatalogue } from '@/catalogue/catalogue-context'
+import { useAddToCalendar } from '@/hooks/use-add-to-calendar'
 import { fromDayKey } from '@/lib/date'
 import { endTime, formatPrice, shortDate } from '@/lib/format'
 
@@ -15,7 +15,8 @@ type BookingActionsProps = {
   /** The selected day's open times, once loaded. */
   daySlots?: TimeSlot[]
   confirming: boolean
-  confirmFailed: boolean
+  /** Why the last confirmation failed, if it did. */
+  confirmError: string | null
   joiningWaitlist: boolean
   confirmed?: Appointment
   onConfirm: () => void
@@ -29,13 +30,15 @@ export function BookingActions({
   rescheduling,
   daySlots,
   confirming,
-  confirmFailed,
+  confirmError,
   joiningWaitlist,
   confirmed,
   onConfirm,
   onJoinWaitlist,
   onClose,
 }: BookingActionsProps) {
+  const { barberById, serviceById } = useCatalogue()
+  const addToCalendar = useAddToCalendar()
   const { step, selection } = flow
   const service = selection.serviceId ? serviceById(selection.serviceId) : undefined
 
@@ -82,9 +85,9 @@ export function BookingActions({
   if (step === 'review') {
     return (
       <BookingActionBar>
-        {confirmFailed && (
+        {confirmError && (
           <p role="alert" className="mb-2 text-center text-footnote text-destructive">
-            לא הצלחנו לשמור את התור. נסו שוב.
+            {confirmError}
           </p>
         )}
         <Button className="w-full" disabled={confirming} onClick={onConfirm}>

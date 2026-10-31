@@ -18,7 +18,7 @@ type TimeStepProps = {
   duration: number
   slots: QueryState<TimeSlot[]>
   selectedTime?: string
-  waitlistFailed: boolean
+  waitlistError: string | null
   onSelect: (slot: TimeSlot) => void
   onChooseAnotherDay: () => void
 }
@@ -31,7 +31,7 @@ export function TimeStep({
   duration,
   slots,
   selectedTime,
-  waitlistFailed,
+  waitlistError,
   onSelect,
   onChooseAnotherDay,
 }: TimeStepProps) {
@@ -68,7 +68,7 @@ export function TimeStep({
             date={date}
             serviceId={serviceId}
             barberId={barberId}
-            failed={waitlistFailed}
+            error={waitlistError}
             onChooseAnotherDay={onChooseAnotherDay}
           />
         ) : (

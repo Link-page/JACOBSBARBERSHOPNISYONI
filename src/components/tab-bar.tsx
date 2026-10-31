@@ -1,17 +1,11 @@
-import { CalendarDays, House, Images, Plus, UserRound } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { m } from 'motion/react'
 
+import { navItems } from '@/layout/nav-items'
 import { springSnappy } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 import { useApp } from '@/store/app-context'
-import type { Tab } from '@/store/types'
 
-const items: { id: Tab; label: string; icon: typeof House }[] = [
-  { id: 'home', label: 'בית', icon: House },
-  { id: 'lookbook', label: 'גלריה', icon: Images },
-  { id: 'bookings', label: 'התורים', icon: CalendarDays },
-  { id: 'profile', label: 'פרופיל', icon: UserRound },
-]
 
 /**
  * Floating glass navigation. A brass notch glides to the active tab; booking —
@@ -21,9 +15,9 @@ export function TabBar() {
   const { tab, setTab, openBooking, upcoming } = useApp()
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex items-end gap-2.5 px-4 pb-[max(env(safe-area-inset-bottom),18px)]">
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex items-end gap-2.5 px-4 pb-[max(env(safe-area-inset-bottom),18px)] md:px-[max(1rem,calc(50%-17rem))] lg:hidden">
       <nav aria-label="ניווט ראשי" className="glass pointer-events-auto flex h-16 flex-1 rounded-[24px] px-1">
-        {items.map(({ id, label, icon: Icon }) => {
+        {navItems.map(({ id, label, icon: Icon }) => {
           const active = tab === id
           return (
             <button

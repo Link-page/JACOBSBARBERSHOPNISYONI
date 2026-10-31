@@ -1,7 +1,7 @@
 import { Hourglass } from 'lucide-react'
 import { m } from 'motion/react'
 
-import { barberById } from '@/data/shop'
+import { useCatalogue } from '@/catalogue/catalogue-context'
 import { spring } from '@/lib/motion'
 
 import { BookingDetails } from '../components/booking-details'
@@ -10,12 +10,13 @@ type WaitlistOfferProps = {
   date: string
   serviceId: string
   barberId: string
-  failed: boolean
+  error: string | null
   onChooseAnotherDay: () => void
 }
 
 /** Empty state for a fully booked day: explains why, and offers the waiting list (joined from the action bar). */
-export function WaitlistOffer({ date, serviceId, barberId, failed, onChooseAnotherDay }: WaitlistOfferProps) {
+export function WaitlistOffer({ date, serviceId, barberId, error, onChooseAnotherDay }: WaitlistOfferProps) {
+  const { barberById } = useCatalogue()
   const who = barberId === 'any' ? 'כל התורים במספרה' : `כל התורים אצל ${barberById(barberId).name}`
 
   return (
@@ -42,9 +43,9 @@ export function WaitlistOffer({ date, serviceId, barberId, failed, onChooseAnoth
       >
         בחירת יום אחר
       </button>
-      {failed && (
+      {error && (
         <p role="alert" className="mt-3 text-footnote text-destructive">
-          ההרשמה לרשימת ההמתנה לא הצליחה. נסו שוב.
+          {error}
         </p>
       )}
     </m.div>

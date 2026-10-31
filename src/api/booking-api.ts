@@ -10,8 +10,9 @@ import type {
 } from './types'
 
 /**
- * Everything the app needs from the shop's booking system. A server-backed
- * implementation replaces the on-device one without touching the UI.
+ * Everything the app needs from the shop's booking system. Two implementations:
+ * Supabase (real, per signed-in customer) and an on-device demo. Failures are
+ * BookingError (./errors).
  */
 export interface BookingApi {
   /** True only when requests reach the shop's server. The UI must not claim delivery otherwise. */
@@ -23,8 +24,11 @@ export interface BookingApi {
   getDaySlots(date: string, query: AvailabilityQuery): Promise<TimeSlot[]>
   getNextAvailable(query: AvailabilityQuery): Promise<NextSlot | null>
 
+  /** The signed-in customer's own appointments, newest last. */
+  listAppointments(): Promise<Appointment[]>
   createAppointment(input: NewAppointment): Promise<Appointment>
   rescheduleAppointment(appointment: Appointment, change: Pick<Appointment, 'barberId' | 'start'>): Promise<Appointment>
+  cancelAppointment(id: string): Promise<void>
 
   joinWaitlist(request: WaitlistRequest): Promise<WaitlistReceipt>
 }

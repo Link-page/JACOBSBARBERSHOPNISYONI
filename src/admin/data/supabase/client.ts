@@ -1,17 +1,12 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+import { createSupabaseClient } from '@/lib/supabase/client'
 
 import { AdminError, toAdminError } from '../errors'
-import { supabaseSettings } from '../config'
 
-/**
- * Browser client for the admin. It only ever holds the project URL and the
- * publishable key; Row Level Security and checked database functions decide
- * what each signed-in user may do.
- */
+/** The admin's own client and session (separate from the customer app's). */
 export function createBrowserClient(): SupabaseClient {
-  return createClient(supabaseSettings.url, supabaseSettings.key, {
-    auth: { persistSession: true, autoRefreshToken: true, storageKey: 'jacobs.admin.session' },
-  })
+  return createSupabaseClient('jacobs.admin.session')
 }
 
 /** Returns data or throws a translated AdminError. */

@@ -8,8 +8,8 @@ import { ListGroup, ListRow } from '@/components/list'
 import { ScrollScreen } from '@/components/scroll-screen'
 import { SegmentedControl } from '@/components/segmented-control'
 import { Button } from '@/components/ui/button'
-import { barberById, serviceById } from '@/data/shop'
-import { addToCalendar } from '@/lib/calendar'
+import { useCatalogue } from '@/catalogue/catalogue-context'
+import { useAddToCalendar } from '@/hooks/use-add-to-calendar'
 import { inlineSign } from '@/lib/direction'
 import { endTime, formatPrice, formatTime, relativeDay, shortDate } from '@/lib/format'
 import { spring } from '@/lib/motion'
@@ -20,8 +20,11 @@ type Segment = 'upcoming' | 'history'
 
 export function BookingsScreen() {
   const { upcoming, past, cancel, openBooking } = useApp()
+  const { barberById, serviceById } = useCatalogue()
   const [segment, setSegment] = useState<Segment>('upcoming')
   const [cancelling, setCancelling] = useState<Appointment | null>(null)
+  /** The server's reason when a cancellation was refused (e.g. too close to the time). */
+  const [notice, setNotice] = useState<string | null>(null)
 
   return (
     <ScrollScreen title="התורים שלי">
@@ -45,6 +48,11 @@ export function BookingsScreen() {
           transition={spring}
           className="mt-5"
         >
+          {notice && (
+            <p role="alert" className="mb-3 rounded-[16px] bg-destructive/10 px-4 py-3 text-footnote text-destructive">
+              {notice}
+            </p>
+          )}
           {segment === 'upcoming' ? (
             upcoming.length ? (
               <div className="flex flex-col gap-3">
@@ -84,7 +92,7 @@ export function BookingsScreen() {
         }
         confirmLabel="ביטול התור"
         cancelLabel="השארת התור"
-        onConfirm={() => cancelling && cancel(cancelling.id)}
+        onConfirm={() => cancelling && void cancel(cancelling.id).then(setNotice)}
       />
     </ScrollScreen>
   )
@@ -92,6 +100,8 @@ export function BookingsScreen() {
 
 function UpcomingCard({ appointment, onCancel }: { appointment: Appointment; onCancel: () => void }) {
   const { now, openBooking } = useApp()
+  const { barberById, serviceById } = useCatalogue()
+  const addToCalendar = useAddToCalendar()
   const service = serviceById(appointment.serviceId)
   const barber = barberById(appointment.barberId)
   const start = new Date(appointment.start)
@@ -139,6 +149,7 @@ function UpcomingCard({ appointment, onCancel }: { appointment: Appointment; onC
 
 function History({ appointments }: { appointments: Appointment[] }) {
   const { openBooking } = useApp()
+  const { barberById, serviceById } = useCatalogue()
   if (!appointments.length) {
     return <p className="mt-16 text-center text-subhead text-muted-foreground">ביקורים קודמים יופיעו כאן.</p>
   }
@@ -148,12 +159,13 @@ function History({ appointments }: { appointments: Appointment[] }) {
         const service = serviceById(a.serviceId)
         const barber = barberById(a.barberId)
         const cancelled = a.status === 'cancelled'
+        const missed = a.status === 'no_show'
         return (
           <ListRow
             key={a.id}
             leading={<DateTile date={new Date(a.start)} muted={cancelled} />}
             title={<span className={cancelled ? 'text-muted-foreground line-through' : undefined}>{service.name}</span>}
-            subtitle={cancelled ? 'בוטל' : `אצל ${barber.name} · ${formatPrice(service.price)}`}
+            subtitle={cancelled ? 'בוטל' : missed ? `אצל ${barber.name} · לא הגעתם` : `אצל ${barber.name} · ${formatPrice(service.price)}`}
             trailing={
               <Button
                 size="sm"

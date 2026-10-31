@@ -1,8 +1,9 @@
 import { CalendarClock, CalendarPlus, Navigation, type LucideIcon } from 'lucide-react'
 import type { ComponentProps } from 'react'
 
-import { barberById, serviceById } from '@/data/shop'
-import { addToCalendar } from '@/lib/calendar'
+import { useCatalogue } from '@/catalogue/catalogue-context'
+import { BarberPortrait } from '@/components/barber-portrait'
+import { useAddToCalendar } from '@/hooks/use-add-to-calendar'
 import { endTime, formatTime, monthName, relativeDay, weekdayLong } from '@/lib/format'
 import { links } from '@/lib/links'
 import { useApp } from '@/store/app-context'
@@ -11,6 +12,8 @@ import type { Appointment } from '@/store/types'
 /** The customer's next visit: a large serif date, the time, and three quick actions. */
 export function NextAppointmentCard({ appointment }: { appointment: Appointment }) {
   const { now, openBooking } = useApp()
+  const { barberById, serviceById } = useCatalogue()
+  const addToCalendar = useAddToCalendar()
   const service = serviceById(appointment.serviceId)
   const barber = barberById(appointment.barberId)
   const start = new Date(appointment.start)
@@ -41,6 +44,8 @@ export function NextAppointmentCard({ appointment }: { appointment: Appointment 
               {service.name} <span className="text-ink-foreground/55">· אצל {barber.name}</span>
             </p>
           </div>
+          {/* The booked barber, in the space at the end of the date/time row. */}
+          <BarberPortrait barber={barber} className="ms-3 size-14 self-center bg-white/[0.06] text-title2 sm:size-16" />
         </div>
       </div>
 

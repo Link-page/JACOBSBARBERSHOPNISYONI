@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { Drawer, DrawerContent, DrawerDescription, DrawerTitle } from '@/components/ui/drawer'
 
-import { useIsDesktop } from '../lib/use-media-query'
+import { useIsDesktop } from '@/hooks/use-media-query'
 
 type ResponsiveSheetProps = {
   open: boolean

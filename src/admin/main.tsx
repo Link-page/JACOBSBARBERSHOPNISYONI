@@ -6,7 +6,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 
 import { SetupRequiredScreen } from './auth/auth-screens'
-import { supabaseConfigState } from './data/config'
+import { supabaseConfigState } from '@/lib/supabase/config'
 
 /**
  * Chooses the backend:

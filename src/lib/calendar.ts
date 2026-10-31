@@ -1,4 +1,5 @@
-import { barberById, serviceById, shop } from '@/data/shop'
+import type { Barber, Service } from '@/catalogue/types'
+import { shop } from '@/data/shop'
 import { links } from '@/lib/links'
 import type { Appointment } from '@/store/types'
 
@@ -6,9 +7,7 @@ const stamp = (date: Date) => date.toISOString().replace(/[-:]/g, '').replace(/\
 const escape = (text: string) => text.replace(/[\\;,]/g, (c) => `\\${c}`).replace(/\n/g, '\\n')
 
 /** Downloads an .ics file; iOS opens it straight into the "Add to Calendar" sheet. */
-export function addToCalendar(appointment: Appointment) {
-  const service = serviceById(appointment.serviceId)
-  const barber = barberById(appointment.barberId)
+export function addToCalendar(appointment: Appointment, service: Pick<Service, 'id' | 'name' | 'duration'>, barber: Pick<Barber, 'name'>) {
   const start = new Date(appointment.start)
   const end = new Date(start.getTime() + service.duration * 60_000)
 

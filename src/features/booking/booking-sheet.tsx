@@ -1,8 +1,9 @@
 import { useState } from 'react'
 
-import { api, type Appointment } from '@/api'
-import { Drawer, DrawerContent } from '@/components/ui/drawer'
-import { serviceById } from '@/data/shop'
+import type { Appointment } from '@/api'
+import { backend } from '@/backend'
+import { useCatalogue } from '@/catalogue/catalogue-context'
+import { ResponsivePanel } from '@/components/responsive-panel'
 import { useDaySlots } from '@/hooks/use-availability'
 import { useApp } from '@/store/app-context'
 import type { BookingRequest } from '@/store/types'
@@ -34,12 +35,16 @@ const titles: Record<StepId, string> = {
 export function BookingSheet() {
   const { booking, closeBooking } = useApp()
   return (
-    <Drawer open={booking.open} onOpenChange={(open) => !open && closeBooking()} shouldScaleBackground>
-      <DrawerContent className="h-[94dvh]" aria-describedby={undefined}>
-        {/* A new session remounts the flow so every booking starts fresh. */}
-        <BookingFlowView key={booking.session} request={booking.request} onClose={closeBooking} />
-      </DrawerContent>
-    </Drawer>
+    <ResponsivePanel
+      open={booking.open}
+      onOpenChange={(open) => !open && closeBooking()}
+      scaleBackground
+      drawerClassName="h-[94dvh]"
+      dialogClassName="h-[min(860px,90dvh)] max-h-none w-[min(540px,calc(100vw-48px))] overflow-hidden"
+    >
+      {/* A new session remounts the flow so every booking starts fresh. */}
+      <BookingFlowView key={booking.session} request={booking.request} onClose={closeBooking} />
+    </ResponsivePanel>
   )
 }
 
@@ -50,9 +55,10 @@ function BookingFlowView({ request, onClose }: { request: BookingRequest; onClos
     request.mode === 'reschedule' ? appointments.find((a) => a.id === request.appointmentId) : undefined,
   )
   const flow = useBookingFlow(request, existing)
+  const { serviceById } = useCatalogue()
   const { selection } = flow
   const service = selection.serviceId ? serviceById(selection.serviceId) : undefined
-  const query = service && selection.barberId ? { barberId: selection.barberId, duration: service.duration } : null
+  const query = service && selection.barberId ? { serviceId: service.id, barberId: selection.barberId, duration: service.duration } : null
 
   // Shared by the time screen and the action bar (which offers the waiting list on full days).
   const daySlots = useDaySlots(selection.date, query)
@@ -77,7 +83,7 @@ function BookingFlowView({ request, onClose }: { request: BookingRequest; onClos
   }
 
   const title =
-    flow.step === 'done' ? (existing ? 'המועד עודכן' : api.connected ? 'התור נקבע' : 'התור נשמר') : existing && flow.step !== 'waitlisted' ? 'שינוי מועד' : titles[flow.step]
+    flow.step === 'done' ? (existing ? 'המועד עודכן' : backend.booking.connected ? 'התור נקבע' : 'התור נשמר') : existing && flow.step !== 'waitlisted' ? 'שינוי מועד' : titles[flow.step]
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -86,7 +92,7 @@ function BookingFlowView({ request, onClose }: { request: BookingRequest; onClos
       <StepStage stepKey={flow.step} direction={flow.direction}>
         {flow.step === 'service' && <ServiceStep value={selection.serviceId} onChange={flow.chooseService} />}
         {flow.step === 'barber' && service && (
-          <BarberStep value={selection.barberId} duration={service.duration} onChange={flow.chooseBarber} />
+          <BarberStep value={selection.barberId} serviceId={service.id} duration={service.duration} onChange={flow.chooseBarber} />
         )}
         {flow.step === 'date' && service && selection.barberId && query && (
           <DateStep
@@ -105,7 +111,7 @@ function BookingFlowView({ request, onClose }: { request: BookingRequest; onClos
             duration={service.duration}
             slots={daySlots}
             selectedTime={selection.time}
-            waitlistFailed={waitlist.state.status === 'error'}
+            waitlistError={waitlist.error}
             onSelect={flow.chooseTime}
             onChooseAnotherDay={() => flow.goTo('date')}
           />
@@ -121,10 +127,10 @@ function BookingFlowView({ request, onClose }: { request: BookingRequest; onClos
           />
         )}
         {flow.step === 'done' && confirmed && (
-          <DoneStep appointment={confirmed} rescheduled={!!existing} connected={api.connected} />
+          <DoneStep appointment={confirmed} rescheduled={!!existing} connected={backend.booking.connected} />
         )}
         {flow.step === 'waitlisted' && waitlist.state.status === 'done' && (
-          <WaitlistDoneStep receipt={waitlist.state.receipt} connected={api.connected} />
+          <WaitlistDoneStep receipt={waitlist.state.receipt} connected={backend.booking.connected} />
         )}
       </StepStage>
 
@@ -133,7 +139,7 @@ function BookingFlowView({ request, onClose }: { request: BookingRequest; onClos
         rescheduling={!!existing}
         daySlots={daySlots.data}
         confirming={booking.status === 'pending'}
-        confirmFailed={booking.status === 'error'}
+        confirmError={booking.error}
         joiningWaitlist={waitlist.state.status === 'pending'}
         confirmed={confirmed}
         onConfirm={confirm}

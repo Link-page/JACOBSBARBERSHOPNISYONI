@@ -9,7 +9,7 @@ import { MorePage } from './layout/more-page'
 import { PhoneLayout } from './layout/phone-layout'
 import { isOwner } from './lib/permissions'
 import { useRoute, type RouteId } from './lib/router'
-import { useIsDesktop } from './lib/use-media-query'
+import { useIsDesktop } from '@/hooks/use-media-query'
 import { pages } from './pages'
 import { routes } from './routes'
 
