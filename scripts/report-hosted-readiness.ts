@@ -1,5 +1,6 @@
 /**
- * Reports the hosted project's Auth posture before the admin is published.
+ * Reports what the hosted project still needs before publishing: Auth
+ * settings, and whether the latest migration (customer accounts) is installed.
  * Read-only: it calls the public settings endpoint the sign-in form itself
  * uses, with the publishable key, and never prints the URL or the key.
  * Findings are GitHub warnings, not failures: they are dashboard settings
@@ -29,6 +30,18 @@ if (!response?.ok) {
 }
 const settings = (await response.json()) as AuthSettings
 
+/** Signed-out call: "permission denied" means the function exists; "not found" means the migration hasn't run. */
+async function functionInstalled(name: string, body: object) {
+  const res = await fetch(`${url}/rest/v1/rpc/${name}`, {
+    method: 'POST',
+    headers: { apikey: key, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }).catch(() => null)
+  if (!res) return null
+  const error = (await res.json().catch(() => ({}))) as { code?: string }
+  return error.code !== 'PGRST202'
+}
+
 function report(ok: boolean, good: string, warning: string) {
   console.log(ok ? `✓ ${good}` : `::warning title=Supabase Auth::${warning}`)
 }
@@ -38,10 +51,20 @@ const providers = Object.entries(settings.external ?? {})
   .map(([name]) => name)
 console.log(`Sign-in methods enabled: ${providers.join(', ') || 'none'}`)
 
+const accounts = await functionInstalled('register_customer', { p_full_name: '', p_phone: '' })
 report(
-  settings.disable_signup === true,
-  'Public sign-up is disabled (staff are invited).',
-  'Public sign-up is ON: anyone can create an account and call the booking functions directly. Until the customer app uses accounts, turn off "Allow new users to sign up" (Authentication → Sign In / Providers).',
+  accounts === true,
+  'Customer accounts migration (0010) is installed.',
+  accounts === null
+    ? 'Could not check for migration 0010 (network error).'
+    : 'Migration 0010_customer_accounts.sql is not installed: run it in the SQL Editor before opening customer registration.',
+)
+// Public sign-up is the goal for customers, but only once the per-customer limits (0010) exist.
+const signupOpen = settings.disable_signup !== true
+report(
+  !signupOpen || accounts === true,
+  signupOpen ? 'Public sign-up is on, with per-customer limits installed.' : 'Public sign-up is off. Open it when docs/customer-app.md "Before opening registration" is done.',
+  'Public sign-up is ON without migration 0010: accounts can be created with no per-customer booking limits. Turn off "Allow new users to sign up" (Authentication → Sign In / Providers) or run the migration.',
 )
 report(
   settings.mailer_autoconfirm !== true,

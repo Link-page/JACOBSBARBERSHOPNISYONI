@@ -45,7 +45,7 @@ GitHub Pages serves static files only, so bookings and administration need a hos
   - Both are public by design. They appear in the website's JavaScript and in GitHub Actions logs, because repository variables are not masked.
   - Secret keys (`sb_secret_…`) and the legacy `service_role` key must never appear in the app, in committed `.env` files or in GitHub variables. The project enforces this in three places:
     - `scripts/check-supabase-env.ts` fails the deploy if one is configured
-    - `scripts/check-admin-bundle.ts` fails if any bundle contains one
+    - `scripts/check-bundle.ts` fails if any bundle contains one (either key format)
     - the admin refuses to start with one
 - **Default deny.** All table privileges are revoked, then the minimum is granted back. Row-level security is on for all 15 tables.
 - **Roles live in `profiles.role`:** `owner`, `barber` or `customer`. New accounts are customers. Only an owner can change roles, through `admin_set_user_role`, and the last owner can't demote themselves.
@@ -192,7 +192,7 @@ Locally, `npm run test:stack` needs Docker and `npx supabase@2.122.0 start`, the
 The same job also:
 - validates the variables without printing them
 - proves the build compiled both in, with no secret key in any bundle and none of the Supabase settings in the customer bundle
-- reports the project's Auth settings (`scripts/report-hosted-auth.ts`): public sign-up and email confirmation, as warnings
+- reports what the hosted project still needs (`scripts/report-hosted-readiness.ts`): public sign-up, email confirmation and whether migration 0010 is installed, as warnings
 
 **Database tests:** locally, set `TEST_DATABASE_URL` to a superuser connection on a throwaway server; the default is `postgres://postgres@127.0.0.1:54329/postgres`. The tests drop and recreate a `jacobs_test` database.
 

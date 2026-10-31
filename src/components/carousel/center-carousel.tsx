@@ -72,7 +72,7 @@ export function CenterCarousel<T>({ items, getKey, label, slideLabel, renderSlid
       aria-label={label}
       tabIndex={0}
       onKeyDown={onKeyDown}
-      className={cn('group/carousel relative rounded-[32px] outline-none focus-visible:ring-2 focus-visible:ring-brass/60', className)}
+      className={cn('group/carousel relative rounded-[32px] outline-none focus-visible:ring-1 focus-visible:ring-brass/45', className)}
     >
       <div ref={viewport} className="relative overflow-hidden py-3" style={{ height: width ? width * aspect + 24 : undefined }}>
         {width > 0 && (

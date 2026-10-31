@@ -8,7 +8,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="h-full overflow-y-auto overscroll-contain bg-background lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
       <section className="surface-ink grain relative flex flex-col justify-end px-7 pt-[max(env(safe-area-inset-top),48px)] pb-16 lg:min-h-full lg:justify-center lg:px-16 lg:py-16">
-        <p className="wordmark text-title3 text-brass">JACOB'S</p>
+        <p className="wordmark w-fit text-title3 text-brass">JACOB'S</p>
         <h1 className="mt-6 max-w-md font-display text-[34px] leading-[1.15] font-medium text-balance lg:text-[52px]">
           התור הבא שלכם, במרחק נגיעה.
         </h1>

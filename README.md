@@ -1,6 +1,6 @@
 # JACOB'S — Barbershop Booking App
 
-A premium, mobile-first booking app for JACOB'S barbershop, in Hebrew (RTL). It has its own identity: warm monochrome neutrals, ink surfaces, and a single brass accent. Display type is Frank Ruhl Libre (titles and numerals); UI text is Heebo.
+A premium booking app for JACOB'S barbershop, in Hebrew (RTL): native-feeling on phones, with its own layout on tablets and desktops. It has its own identity: warm monochrome neutrals, ink surfaces, and a single brass accent. Display type is Frank Ruhl Libre (titles and numerals); UI text is Heebo.
 
 ![Light mode](docs/preview-light.jpg)
 ![Dark mode](docs/preview-dark.jpg)
@@ -42,10 +42,10 @@ npm run test:db   # database tests (disposable Postgres 16)
 
 | Tab | What it does |
 | --- | --- |
-| **בית (Home)** | Greeting, next-appointment card (directions, add to calendar, reschedule), booking button with the next free slot, gallery, services and prices, team with each barber's next opening, live open/closed status, hours and map. |
-| **גלריה (Gallery)** | Filterable masonry; tap a look to open it full-screen (drag down to dismiss) and book it. |
+| **בית (Home)** | Greeting, next-appointment card with the booked barber's photo (directions, add to calendar, reschedule), booking button with the next free slot, gallery and team as centre-focused carousels, services and prices, hours and map. |
+| **גלריה (Gallery)** | The shop's real photos (Supabase Storage), filterable by category; tap one to open it full-screen and book that style. An honest empty state until photos are uploaded. |
 | **התורים (Bookings)** | Upcoming and history: reschedule, cancel (with confirmation), add to calendar, rebook. |
-| **פרופיל (Profile)** | Loyalty stamp card, appearance (automatic / light / dark), notification preferences, contact links. |
+| **פרופיל (Profile)** | Name, phone, visits, favourite barber, appearance (automatic / light / dark), notification preferences, contact links, and sign-out. |
 
 ### Booking flow
 
@@ -58,45 +58,13 @@ A sheet with five steps: **service → barber → day → time → summary**. Se
 - **Time: separate screen.** Tapping a day opens a vertical list of large time rows grouped into morning, afternoon and evening, with sticky group headers and a fixed Continue button.
 - **Waiting list.** A fully booked day opens the same time screen with an empty state and a **הצטרפות לרשימת המתנה** button. It registers the date, barber and service, then shows a confirmation; joining twice reports that you're already on the list.
 
-## No backend yet: what that means
+## Accounts and data
 
-All data goes through `src/api`. The active implementation, `localBookingApi`, runs on the device:
-
-- availability comes from a simulated diary (`src/api/local/shop-diary.ts`) with quiet days, busy days and fully booked days
-- bookings and waiting-list requests are stored in `localStorage`
-
-It reports `connected: false`, and the UI reflects that honestly. Confirmations say the request was **saved on this device and not sent to the shop**; they never claim the shop received it. To go live, implement the `BookingApi` interface (`src/api/booking-api.ts`) against the real server and export it from `src/api/index.ts`. The UI needs no changes; the confirmation copy switches automatically.
+With the Supabase variables set, customers sign in or register (email and password, name and Israeli mobile, email confirmation), and everything they see and book comes from the database: services, the real team and their photos, the gallery, their own appointments and waiting-list requests. Without them, the app runs as an on-device demo that says so on every confirmation. Details, security model and the Supabase settings needed before opening registration: **[docs/customer-app.md](docs/customer-app.md)**.
 
 ## Architecture
 
-```
-src/
-  api/                     data access — the only layer that talks to a backend
-    booking-api.ts         BookingApi contract
-    types.ts               DTOs (DayAvailability, TimeSlot, WaitlistRequest, …)
-    local/                 on-device implementation, simulated diary, waitlist storage
-  booking/                 pure domain logic (no React)
-    availability.ts        day status and free slots from hours + occupancy
-    calendar.ts            month grid, browsable range
-    day-parts.ts           morning / afternoon / evening grouping
-    opening-status.ts      open now / next opening
-  hooks/                   useQuery (cached, race-safe), availability hooks, delayed loading flag
-  features/booking/
-    booking-sheet.tsx      composes header, step stage and action bar
-    use-booking-flow.ts    step machine and selections
-    booking-header.tsx · booking-actions.tsx · step-stage.tsx
-    steps/                 one file per step
-    calendar/              month calendar, header, weekday row, day cell, availability mark, legend
-    time/                  slot list, day-part section, slot row, skeleton
-    waitlist/              fully-booked empty state
-    hooks/                 confirm booking, join waiting list
-  features/lookbook/       full-screen look viewer
-  screens/                 home, lookbook, bookings, profile
-  components/              shared app components; components/ui = shadcn/ui primitives
-  data/shop.ts             ← all business content (sample data — replace)
-  store/                   app state and persistence
-  lib/                     dates, Hebrew formatting, direction, calendar export, links
-```
+See [docs/customer-app.md](docs/customer-app.md#architecture) for the customer app's modules and [docs/admin.md](docs/admin.md#architecture) for the admin. In short: screens depend on contracts (`AccountApi`, `CatalogueApi`, `BookingApi`); `src/backend/index.ts` picks the Supabase or on-device implementation once; pure domain logic lives in `src/booking/` and is shared with the admin.
 
 ## Stack
 
@@ -106,6 +74,6 @@ Motion is used for spring selection indicators (calendar day, time row, tabs), d
 
 ## Before launch
 
-- **Replace the sample content** in `src/data/shop.ts`: address, phone, WhatsApp, Instagram, hours, prices, team and the customer profile are placeholders.
-- **Add real photos**: put images in `public/` and set `image` on a look or `photo` on a barber, as a path inside `public/` without a leading slash (e.g. `image: 'lookbook/skin-fade.jpg'`).
-- **Connect the booking backend** (see above). Cancelling an appointment currently updates the device only and doesn't go through `src/api` yet.
+- **Contact details**: address, phone, WhatsApp, Instagram and hours in `src/data/shop.ts` are placeholders.
+- **Photos**: upload barber portraits (Team) and gallery photos (Settings → Gallery) in the admin; the app shows them from Supabase Storage.
+- **Registration**: follow [docs/customer-app.md → Before opening registration](docs/customer-app.md#before-opening-registration-supabase-settings).

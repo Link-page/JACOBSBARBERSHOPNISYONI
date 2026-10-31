@@ -38,14 +38,16 @@ export function NextAppointmentCard({ appointment }: { appointment: Appointment 
             <p className="text-subhead text-ink-foreground/60">{weekdayLong(start)}</p>
             <p className="font-display text-[34px] leading-tight font-medium tabular">
               {time}
-              <span className="ms-2 font-sans text-footnote text-ink-foreground/50">עד {endTime(time, service.duration)}</span>
+              {/* Kept whole: on narrow phones it moves under the start time as one unit. */}
+              <span className="ms-2 inline-block font-sans text-footnote whitespace-nowrap text-ink-foreground/50">עד {endTime(time, service.duration)}</span>
             </p>
-            <p className="mt-0.5 truncate text-subhead">
-              {service.name} <span className="text-ink-foreground/55">· אצל {barber.name}</span>
-            </p>
+            <p className="mt-0.5 truncate text-subhead">{service.name}</p>
           </div>
-          {/* The booked barber, in the space at the end of the date/time row. */}
-          <BarberPortrait barber={barber} className="ms-3 size-14 self-center bg-white/[0.06] text-title2 sm:size-16" />
+          {/* The booked barber — photo and name — in the space at the end of the date/time row. */}
+          <div className="ms-3 flex w-16 shrink-0 flex-col items-center justify-center gap-1.5 sm:w-20">
+            <BarberPortrait barber={barber} className="size-12 bg-white/[0.06] text-title2 min-[390px]:size-14 sm:size-16" />
+            <span className="max-w-full truncate text-caption text-ink-foreground/60">אצל {barber.name}</span>
+          </div>
         </div>
       </div>
 

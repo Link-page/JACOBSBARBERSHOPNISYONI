@@ -40,7 +40,7 @@ export function HomeScreen() {
       }
     >
       {/* Desktop: the appointment and the shop's details side by side. */}
-      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:items-start">
+      <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:items-start">
         <div>
           {next ? <NextAppointmentCard appointment={next} /> : <NoAppointmentCard onClick={() => openBooking()} />}
           <div className="mt-4">

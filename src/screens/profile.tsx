@@ -32,68 +32,74 @@ export function ProfileScreen() {
 
   return (
     <ScrollScreen title="פרופיל">
-      <div className="mt-5 flex flex-col items-center rounded-[28px] bg-card px-5 pt-7 pb-5 text-center shadow-elevation">
-        <Avatar aria-hidden className="size-[88px]">
-          <AvatarFallback className="text-[38px]">{profile.fullName.charAt(0)}</AvatarFallback>
-        </Avatar>
-        <p className="mt-3.5 font-display text-title2 font-medium">{profile.fullName}</p>
-        <p className="text-subhead text-muted-foreground tabular" dir="ltr">
-          {formatIlMobile(profile.phone)}
-        </p>
-        <dl className="mt-5 grid w-full grid-cols-3 divide-x divide-border rounded-[18px] bg-elevated py-3 dark:bg-muted">
-          <Stat label="ביקורים" value={String(stats.visits)} />
-          <Stat label="ספר קבוע" value={stats.favorite} />
-          <Stat label="חבר מאז" value={String(new Date(profile.memberSince).getFullYear())} />
-        </dl>
-      </div>
+      {/* Desktop: who you are on one side, settings on the other. */}
+      <div className="lg:grid lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] lg:items-start lg:gap-10">
+        <div>
+          <div className="mt-5 flex flex-col items-center rounded-[28px] bg-card px-5 pt-7 pb-5 text-center shadow-elevation">
+            <Avatar aria-hidden className="size-[88px]">
+              <AvatarFallback className="text-[38px]">{profile.fullName.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <p className="mt-3.5 font-display text-title2 font-medium">{profile.fullName}</p>
+            <p className="text-subhead text-muted-foreground tabular" dir="ltr">
+              {formatIlMobile(profile.phone)}
+            </p>
+            <dl className="mt-5 grid w-full grid-cols-3 divide-x divide-border rounded-[18px] bg-elevated py-3 dark:bg-muted">
+              <Stat label="ביקורים" value={String(stats.visits)} />
+              <Stat label="ספר קבוע" value={stats.favorite} />
+              <Stat label="חבר מאז" value={String(new Date(profile.memberSince).getFullYear())} />
+            </dl>
+          </div>
 
-      {/* The stamp card has no backend yet: shown only in the on-device demo, never as a promise to real customers. */}
-      {!backend.booking.connected && <LoyaltyCard />}
-
-      <ListGroup header="מראה" className="mt-9">
-        <div className="p-3">
-          <SegmentedControl<Appearance>
-            id="appearance"
-            value={appearance}
-            onChange={setAppearance}
-            options={[
-              { value: 'system', label: 'אוטומטי' },
-              { value: 'light', label: 'בהיר' },
-              { value: 'dark', label: 'כהה' },
-            ]}
-          />
+          {/* The stamp card has no backend yet: shown only in the on-device demo, never as a promise to real customers. */}
+          {!backend.booking.connected && <LoyaltyCard />}
         </div>
-      </ListGroup>
+        <div className="lg:[&>*:first-child]:mt-5">
+          <ListGroup header="מראה" className="mt-9">
+            <div className="p-3">
+              <SegmentedControl<Appearance>
+                id="appearance"
+                value={appearance}
+                onChange={setAppearance}
+                options={[
+                  { value: 'system', label: 'אוטומטי' },
+                  { value: 'light', label: 'בהיר' },
+                  { value: 'dark', label: 'כהה' },
+                ]}
+              />
+            </div>
+          </ListGroup>
 
-      <ListGroup header="התראות" className="mt-9" footer="ההעדפות נשמרות במכשיר הזה.">
-        <ListRow
-          icon={Bell}
-          title="תזכורות לתורים"
-          trailing={
-            <Switch
-              checked={preferences.reminders}
-              onCheckedChange={(v) => setPreference('reminders', v)}
-              aria-label="תזכורות לתורים"
+          <ListGroup header="התראות" className="mt-9" footer="ההעדפות נשמרות במכשיר הזה.">
+            <ListRow
+              icon={Bell}
+              title="תזכורות לתורים"
+              trailing={
+                <Switch
+                  checked={preferences.reminders}
+                  onCheckedChange={(v) => setPreference('reminders', v)}
+                  aria-label="תזכורות לתורים"
+                />
+              }
             />
-          }
-        />
-        <ListRow
-          icon={Sparkles}
-          title="מבצעים ועדכונים"
-          trailing={
-            <Switch checked={preferences.offers} onCheckedChange={(v) => setPreference('offers', v)} aria-label="מבצעים ועדכונים" />
-          }
-        />
-      </ListGroup>
+            <ListRow
+              icon={Sparkles}
+              title="מבצעים ועדכונים"
+              trailing={
+                <Switch checked={preferences.offers} onCheckedChange={(v) => setPreference('offers', v)} aria-label="מבצעים ועדכונים" />
+              }
+            />
+          </ListGroup>
 
-      <ListGroup header="יצירת קשר" className="mt-9">
-        <ListRow icon={Phone} title="התקשרות למספרה" value={<span dir="ltr">{shop.phone}</span>} chevron href={links.call} />
-        <ListRow icon={MessageCircle} title="וואטסאפ" chevron href={links.whatsapp} />
-        <ListRow icon={AtSign} title="אינסטגרם" value={<span dir="ltr">@{shop.instagram}</span>} chevron href={links.instagram} />
-        <ListRow icon={MapPin} title="ניווט למספרה" subtitle={links.fullAddress} chevron href={links.directions} />
-      </ListGroup>
+          <ListGroup header="יצירת קשר" className="mt-9">
+            <ListRow icon={Phone} title="התקשרות למספרה" value={<span dir="ltr">{shop.phone}</span>} chevron href={links.call} />
+            <ListRow icon={MessageCircle} title="וואטסאפ" chevron href={links.whatsapp} />
+            <ListRow icon={AtSign} title="אינסטגרם" value={<span dir="ltr">@{shop.instagram}</span>} chevron href={links.instagram} />
+            <ListRow icon={MapPin} title="ניווט למספרה" subtitle={links.fullAddress} chevron href={links.directions} />
+          </ListGroup>
 
-      <AccountSection />
+          <AccountSection />
+        </div>
+      </div>
 
       <p className="mt-9 flex justify-center gap-2 text-footnote text-muted-foreground">
         <span className="wordmark">{shop.name}</span>· גרסה 1.0

@@ -30,7 +30,7 @@ export function BookingsScreen() {
     <ScrollScreen title="התורים שלי">
       <SegmentedControl
         id="bookings"
-        className="mt-5"
+        className="mt-5 md:max-w-sm"
         value={segment}
         onChange={setSegment}
         options={[
@@ -55,7 +55,7 @@ export function BookingsScreen() {
           )}
           {segment === 'upcoming' ? (
             upcoming.length ? (
-              <div className="flex flex-col gap-3">
+              <div className="grid gap-3 md:grid-cols-2 md:gap-4 xl:grid-cols-3">
                 <AnimatePresence initial={false}>
                   {upcoming.map((a) => (
                     <UpcomingCard key={a.id} appointment={a} onCancel={() => setCancelling(a)} />
@@ -76,7 +76,9 @@ export function BookingsScreen() {
               <EmptyState />
             )
           ) : (
-            <History appointments={past} />
+            <div className="md:max-w-3xl">
+              <History appointments={past} />
+            </div>
           )}
         </m.div>
       </AnimatePresence>

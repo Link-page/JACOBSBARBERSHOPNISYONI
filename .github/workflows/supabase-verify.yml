@@ -69,5 +69,5 @@ jobs:
       - name: Verify the build compiled in both variables and no secret key
         run: node scripts/check-bundle.ts
       - run: npm run test:hosted
-      - name: Report Auth settings that matter before publishing (read-only)
-        run: node scripts/report-hosted-auth.ts
+      - name: Report what the hosted project still needs before publishing (read-only)
+        run: node scripts/report-hosted-readiness.ts
