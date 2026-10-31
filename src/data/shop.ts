@@ -17,7 +17,8 @@ export type Service = {
 export type Barber = {
   id: string
   name: string
-  initials: string
+  /** Single letter shown when there's no photo. */
+  initial: string
   role: string
   specialties: string[]
   /** Optional portrait, e.g. "/barbers/jacob.jpg" in /public. */
@@ -26,7 +27,7 @@ export type Barber = {
 
 export type LookPattern = 'fade' | 'waves' | 'dots' | 'lines' | 'arcs' | 'rings'
 export type LookTone = 'ink' | 'graphite' | 'silver' | 'bone'
-export type LookCategory = 'Fades' | 'Classic' | 'Textured' | 'Beard'
+export type LookCategory = 'פייד' | 'קלאסי' | 'מרקם' | 'זקן'
 
 export type Look = {
   id: string
@@ -46,33 +47,36 @@ export type Look = {
 export type DayHours = { open: string; close: string } | null
 
 export const shop = {
-  name: "Jacob's",
-  legalName: "Jacob's Barbershop",
-  address: '120 Dizengoff St',
-  city: 'Tel Aviv',
-  phone: '+972 3-000-0000',
+  /** Brand wordmark, always set in Latin capitals. */
+  name: "JACOB'S",
+  descriptor: 'מספרה',
+  /** Used for map search and calendar invites. */
+  legalName: "JACOB'S Barbershop",
+  address: 'דיזנגוף 120',
+  city: 'תל אביב',
+  phone: '03-000-0000',
   whatsapp: '97230000000',
   instagram: 'jacobs.barbershop',
-  locale: 'en-GB',
+  locale: 'he-IL',
   currency: 'ILS',
   slotStep: 30, // minutes between bookable start times
   hours: [
-    { open: '09:00', close: '20:00' }, // Sunday
+    { open: '09:00', close: '20:00' }, // ראשון
     { open: '09:00', close: '20:00' },
     { open: '09:00', close: '20:00' },
     { open: '09:00', close: '20:00' },
-    { open: '09:00', close: '21:00' }, // Thursday
-    { open: '08:00', close: '15:00' }, // Friday
-    null, // Saturday
+    { open: '09:00', close: '21:00' }, // חמישי
+    { open: '08:00', close: '15:00' }, // שישי
+    null, // שבת
   ] as DayHours[],
 }
 
 export const user = {
-  firstName: 'Daniel',
-  lastName: 'Cohen',
-  initials: 'DC',
-  phone: '+972 54-000-0000',
-  memberSince: 'March 2023',
+  firstName: 'דניאל',
+  lastName: 'כהן',
+  initial: 'ד',
+  phone: '054-000-0000',
+  memberSince: 'מרץ 2023',
   stamps: 7,
   stampsForReward: 10,
 }
@@ -80,48 +84,48 @@ export const user = {
 export const services: Service[] = [
   {
     id: 'signature',
-    name: 'Signature Cut',
-    description: 'Consultation, scissor & clipper cut, wash and style',
+    name: 'תספורת הבית',
+    description: 'ייעוץ, תספורת במספריים ובמכונה, חפיפה ועיצוב',
     duration: 45,
     price: 90,
     icon: Scissors,
   },
   {
     id: 'skin-fade',
-    name: 'Skin Fade',
-    description: 'Seamless fade down to the skin, finished by hand',
+    name: 'סקין פייד',
+    description: 'מעבר חלק עד העור, עם גימור ידני',
     duration: 45,
     price: 100,
     icon: Layers,
   },
   {
     id: 'cut-beard',
-    name: 'Cut & Beard',
-    description: 'Our signature cut with a full beard sculpt',
+    name: 'תספורת וזקן',
+    description: 'תספורת הבית יחד עם עיצוב זקן מלא',
     duration: 70,
     price: 140,
     icon: Crown,
   },
   {
     id: 'beard',
-    name: 'Beard Sculpt',
-    description: 'Shape, line-up and hot towel finish',
+    name: 'עיצוב זקן',
+    description: 'עיצוב, קווים וגימור במגבת חמה',
     duration: 25,
     price: 60,
     icon: Brush,
   },
   {
     id: 'shave',
-    name: 'Hot Towel Shave',
-    description: 'Straight razor shave with hot towels and balm',
+    name: 'גילוח במגבת חמה',
+    description: 'גילוח בתער עם מגבות חמות ובאלם',
     duration: 30,
     price: 80,
     icon: Droplets,
   },
   {
     id: 'kids',
-    name: 'Kids Cut',
-    description: 'For gentlemen under 12',
+    name: 'תספורת ילדים',
+    description: 'עד גיל 12',
     duration: 30,
     price: 60,
     icon: Smile,
@@ -129,24 +133,24 @@ export const services: Service[] = [
 ]
 
 export const barbers: Barber[] = [
-  { id: 'jacob', name: 'Jacob', initials: 'J', role: 'Founder · Master Barber', specialties: ['Classic', 'Scissor work'] },
-  { id: 'eli', name: 'Eli', initials: 'E', role: 'Senior Barber', specialties: ['Skin fades', 'Tapers'] },
-  { id: 'noam', name: 'Noam', initials: 'N', role: 'Beard Specialist', specialties: ['Beards', 'Hot towel shaves'] },
-  { id: 'rafael', name: 'Rafael', initials: 'R', role: 'Barber', specialties: ['Textured crops', 'Curls'] },
+  { id: 'jacob', name: 'יעקב', initial: 'י', role: 'מייסד · ספר ראשי', specialties: ['קלאסי', 'עבודת מספריים'] },
+  { id: 'eli', name: 'אלי', initial: 'א', role: 'ספר בכיר', specialties: ['סקין פייד', 'טייפר'] },
+  { id: 'noam', name: 'נועם', initial: 'נ', role: 'מומחה זקן', specialties: ['זקן', 'גילוח בתער'] },
+  { id: 'rafael', name: 'רפאל', initial: 'ר', role: 'ספר', specialties: ['קרופ מרקמי', 'תלתלים'] },
 ]
 
 export const looks: Look[] = [
-  { id: 'skin-fade', title: 'Skin Fade', category: 'Fades', barberId: 'eli', serviceId: 'skin-fade', pattern: 'fade', tone: 'ink', ratio: 1.33 },
-  { id: 'textured-crop', title: 'Textured Crop', category: 'Textured', barberId: 'rafael', serviceId: 'signature', pattern: 'lines', tone: 'silver', ratio: 1.15 },
-  { id: 'pompadour', title: 'Modern Pompadour', category: 'Classic', barberId: 'jacob', serviceId: 'signature', pattern: 'waves', tone: 'graphite', ratio: 1.45 },
-  { id: 'sculpted-beard', title: 'Sculpted Beard', category: 'Beard', barberId: 'noam', serviceId: 'beard', pattern: 'arcs', tone: 'bone', ratio: 1.25 },
-  { id: 'buzz', title: 'Clean Buzz', category: 'Fades', barberId: 'eli', serviceId: 'skin-fade', pattern: 'dots', tone: 'graphite', ratio: 1.1 },
-  { id: 'side-part', title: 'Classic Side Part', category: 'Classic', barberId: 'jacob', serviceId: 'signature', pattern: 'rings', tone: 'silver', ratio: 1.38 },
-  { id: 'curly-top', title: 'Curly Top Taper', category: 'Textured', barberId: 'rafael', serviceId: 'skin-fade', pattern: 'waves', tone: 'bone', ratio: 1.2 },
-  { id: 'cut-and-beard', title: 'Full Groom', category: 'Beard', barberId: 'noam', serviceId: 'cut-beard', pattern: 'fade', tone: 'graphite', ratio: 1.42 },
+  { id: 'skin-fade', title: 'סקין פייד', category: 'פייד', barberId: 'eli', serviceId: 'skin-fade', pattern: 'fade', tone: 'ink', ratio: 1.33 },
+  { id: 'textured-crop', title: 'קרופ מרקמי', category: 'מרקם', barberId: 'rafael', serviceId: 'signature', pattern: 'lines', tone: 'silver', ratio: 1.15 },
+  { id: 'pompadour', title: 'פומפדור מודרני', category: 'קלאסי', barberId: 'jacob', serviceId: 'signature', pattern: 'waves', tone: 'graphite', ratio: 1.45 },
+  { id: 'sculpted-beard', title: 'זקן מפוסל', category: 'זקן', barberId: 'noam', serviceId: 'beard', pattern: 'arcs', tone: 'bone', ratio: 1.25 },
+  { id: 'buzz', title: 'באז נקי', category: 'פייד', barberId: 'eli', serviceId: 'skin-fade', pattern: 'dots', tone: 'graphite', ratio: 1.1 },
+  { id: 'side-part', title: 'שביל צד קלאסי', category: 'קלאסי', barberId: 'jacob', serviceId: 'signature', pattern: 'rings', tone: 'silver', ratio: 1.38 },
+  { id: 'curly-top', title: 'טייפר עם תלתלים', category: 'מרקם', barberId: 'rafael', serviceId: 'skin-fade', pattern: 'waves', tone: 'bone', ratio: 1.2 },
+  { id: 'full-groom', title: 'טיפוח מלא', category: 'זקן', barberId: 'noam', serviceId: 'cut-beard', pattern: 'fade', tone: 'graphite', ratio: 1.42 },
 ]
 
-export const lookCategories: LookCategory[] = ['Fades', 'Classic', 'Textured', 'Beard']
+export const lookCategories: LookCategory[] = ['פייד', 'קלאסי', 'מרקם', 'זקן']
 
 export const serviceById = (id: string) => services.find((s) => s.id === id) ?? services[0]
 export const barberById = (id: string) => barbers.find((b) => b.id === id) ?? barbers[0]

@@ -1,15 +1,10 @@
+import type { Appointment } from '@/api/types'
+
+export type { Appointment }
+
 export type Tab = 'home' | 'lookbook' | 'bookings' | 'profile'
 
 export type Appearance = 'system' | 'light' | 'dark'
-
-export type Appointment = {
-  id: string
-  serviceId: string
-  barberId: string
-  /** ISO timestamp of the start time. */
-  start: string
-  status: 'booked' | 'cancelled'
-}
 
 export type Preferences = {
   reminders: boolean

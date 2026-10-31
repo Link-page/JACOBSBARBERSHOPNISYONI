@@ -3,7 +3,7 @@ import { useRef, type ReactNode } from 'react'
 
 type ScrollScreenProps = {
   /** Shown in the compact navigation bar once the large title scrolls away. */
-  title: string
+  title: ReactNode
   largeTitle?: ReactNode
   eyebrow?: ReactNode
   accessory?: ReactNode
@@ -11,7 +11,7 @@ type ScrollScreenProps = {
 }
 
 /**
- * A tab's scroll view with iOS large-title behaviour: the title stretches on
+ * A tab's scroll view with a collapsing title: the large title stretches on
  * overscroll, then hands off to a compact glass bar as content scrolls under it.
  */
 export function ScrollScreen({ title, largeTitle, eyebrow, accessory, children }: ScrollScreenProps) {
@@ -28,7 +28,7 @@ export function ScrollScreen({ title, largeTitle, eyebrow, accessory, children }
         style={{ opacity: barOpacity }}
         className="glass-bar pointer-events-none absolute inset-x-0 top-0 z-20 pt-safe"
       >
-        <div className="flex h-11 items-center justify-center text-headline font-semibold">{title}</div>
+        <div className="flex h-11 items-center justify-center font-display text-headline font-medium">{title}</div>
       </m.div>
 
       <m.div
@@ -38,13 +38,9 @@ export function ScrollScreen({ title, largeTitle, eyebrow, accessory, children }
       >
         <div className="px-5 pt-safe pb-40">
           <header className="flex items-end justify-between gap-4 pt-5">
-            <m.div style={{ opacity: titleOpacity, scale: titleScale }} className="min-w-0 origin-left">
-              {eyebrow && (
-                <p className="mb-0.5 text-footnote font-semibold tracking-[0.06em] text-muted-foreground uppercase">
-                  {eyebrow}
-                </p>
-              )}
-              <h1 className="text-large-title font-bold text-balance">{largeTitle ?? title}</h1>
+            <m.div style={{ opacity: titleOpacity, scale: titleScale }} className="min-w-0 ltr:origin-left rtl:origin-right">
+              {eyebrow && <p className="mb-1 text-footnote font-medium text-muted-foreground">{eyebrow}</p>}
+              <h1 className="font-display text-large-title font-medium text-balance">{largeTitle ?? title}</h1>
             </m.div>
             {accessory && <div className="shrink-0 pb-1">{accessory}</div>}
           </header>

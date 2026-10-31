@@ -10,8 +10,8 @@ export type AppContextValue = {
   appointments: Appointment[]
   upcoming: Appointment[]
   past: Appointment[]
-  book: (input: { serviceId: string; barberId: string; start: Date }) => Appointment
-  reschedule: (id: string, start: Date, barberId: string) => Appointment | undefined
+  /** Adds a new appointment or replaces one with the same id. */
+  saveAppointment: (appointment: Appointment) => void
   cancel: (id: string) => void
 
   appearance: Appearance

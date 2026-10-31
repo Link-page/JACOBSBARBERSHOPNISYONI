@@ -6,7 +6,7 @@ export function BarberAvatar({ barber, className }: { barber: Barber; className?
     // Decorative: the barber's name is always rendered next to it.
     <Avatar aria-hidden className={className}>
       {barber.photo && <AvatarImage src={barber.photo} alt="" />}
-      <AvatarFallback>{barber.initials}</AvatarFallback>
+      <AvatarFallback>{barber.initial}</AvatarFallback>
     </Avatar>
   )
 }

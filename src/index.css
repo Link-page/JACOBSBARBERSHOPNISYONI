@@ -3,106 +3,116 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ---------------------------------------------------------------------------
- * Design tokens — modelled on iOS system colors.
- * Light: grouped background #F2F2F7 with white cards.
- * Dark:  true black with #1C1C1E cards.
- * Names follow shadcn/ui so its components theme automatically.
+ * JACOB'S design tokens.
+ * Warm paper and ink neutrals with a single brass accent, used sparingly for
+ * availability, selection and brand marks. Names follow shadcn/ui so its
+ * components theme automatically.
  * ------------------------------------------------------------------------- */
 :root {
-  --background: #f2f2f7;
-  --foreground: #000000;
+  --background: #f4f3ef;
+  --foreground: #121211;
   --card: #ffffff;
-  --card-foreground: #000000;
+  --card-foreground: #121211;
   --popover: #ffffff;
-  --popover-foreground: #000000;
-  --primary: #000000;
-  --primary-foreground: #ffffff;
-  --secondary: rgb(118 118 128 / 0.12);
-  --secondary-foreground: #000000;
-  --muted: rgb(118 118 128 / 0.12);
-  --muted-foreground: rgb(60 60 67 / 0.6);
-  --accent: rgb(118 118 128 / 0.12);
-  --accent-foreground: #000000;
-  --tertiary: rgb(60 60 67 / 0.3);
-  --elevated: #f2f2f7;
-  --destructive: #ff3b30;
-  --success: #34c759;
-  --border: rgb(60 60 67 / 0.16);
-  --input: rgb(60 60 67 / 0.16);
-  --ring: rgb(0 0 0 / 0.35);
-  --row-pressed: rgb(0 0 0 / 0.05);
+  --popover-foreground: #121211;
+  --primary: #121211;
+  --primary-foreground: #f7f5f0;
+  --secondary: rgb(18 18 17 / 0.06);
+  --secondary-foreground: #121211;
+  --muted: rgb(18 18 17 / 0.06);
+  --muted-foreground: #736e65;
+  --accent: rgb(18 18 17 / 0.06);
+  --accent-foreground: #121211;
+  --tertiary: #bcb7ad;
+  --elevated: #efede8;
+  --destructive: #b8372c;
+  --success: #2f7a4b;
+  --border: rgb(18 18 17 / 0.09);
+  --input: rgb(18 18 17 / 0.09);
+  --ring: rgb(18 18 17 / 0.35);
+  --row-pressed: rgb(18 18 17 / 0.04);
   --segment-thumb: #ffffff;
+  --elevation: 0 1px 2px rgb(18 18 17 / 0.04), 0 14px 34px -18px rgb(18 18 17 / 0.16);
 
-  /* Liquid Glass */
-  --glass-bg: rgb(252 252 253 / 0.58);
-  --glass-edge: rgb(0 0 0 / 0.07);
+  /* Brass — the only colour in the system. */
+  --brass: #9c763b;
+  --brass-strong: #82612d;
+  --brass-soft: rgb(156 118 59 / 0.13);
+
+  /* Ink surfaces: the appointment card and loyalty card. */
+  --ink-from: #24231f;
+  --ink-to: #0f0f0e;
+  --ink-foreground: #f4f1ea;
+  --ink-edge: rgb(255 255 255 / 0.07);
+
+  /* Glass */
+  --glass-bg: rgb(250 249 246 / 0.66);
+  --glass-edge: rgb(18 18 17 / 0.07);
   --glass-highlight: rgb(255 255 255 / 0.95);
-  --glass-sheen: rgb(255 255 255 / 0.55);
-  --glass-shadow: 0 14px 36px -14px rgb(0 0 0 / 0.3), 0 3px 10px -4px rgb(0 0 0 / 0.1);
-  --lens: rgb(0 0 0 / 0.065);
-
-  /* Wallet-style pass */
-  --pass-from: #3a3a3c;
-  --pass-to: #0a0a0b;
+  --glass-sheen: rgb(255 255 255 / 0.5);
+  --glass-shadow: 0 16px 36px -16px rgb(18 18 17 / 0.3), 0 3px 10px -4px rgb(18 18 17 / 0.08);
 
   /* Map illustration */
-  --map-land: #ececf1;
-  --map-block: #dfdfe6;
-  --map-road: #ffffff;
-  --map-park: #e1e7e0;
-  --map-water: #dde3ea;
+  --map-block: #e3dfd6;
+  --map-road: #fbfaf7;
+  --map-park: #dde2d3;
+  --map-water: #dbe1e2;
 
-  --radius: 1.375rem;
+  --radius: 1.25rem;
   --ease-spring: linear(0, 0.0414, 0.1423, 0.2742, 0.4162, 0.5538, 0.6778, 0.7835, 0.8691, 0.9349, 0.9828, 1.0154, 1.0354, 1.0457, 1.0489, 1.0472, 1.0424, 1.0361, 1.0291, 1.0224, 1.0162, 1.011, 1.0067, 1.0034, 1.001, 0.9994, 0.9983, 0.9978, 1);
-  --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-out-soft: cubic-bezier(0.22, 0.8, 0.24, 1);
 }
 
 .dark {
-  --background: #000000;
-  --foreground: #ffffff;
-  --card: #1c1c1e;
-  --card-foreground: #ffffff;
-  --popover: #1c1c1e;
-  --popover-foreground: #ffffff;
-  --primary: #ffffff;
-  --primary-foreground: #000000;
-  --secondary: rgb(118 118 128 / 0.24);
-  --secondary-foreground: #ffffff;
-  --muted: rgb(118 118 128 / 0.24);
-  --muted-foreground: rgb(235 235 245 / 0.6);
-  --accent: rgb(118 118 128 / 0.24);
-  --accent-foreground: #ffffff;
-  --tertiary: rgb(235 235 245 / 0.3);
-  --elevated: #2c2c2e;
-  --destructive: #ff453a;
-  --success: #30d158;
-  --border: rgb(84 84 88 / 0.55);
-  --input: rgb(84 84 88 / 0.55);
-  --ring: rgb(255 255 255 / 0.4);
-  --row-pressed: rgb(255 255 255 / 0.07);
-  --segment-thumb: #636366;
+  --background: #0c0c0b;
+  --foreground: #f2f0eb;
+  --card: #191917;
+  --card-foreground: #f2f0eb;
+  --popover: #191917;
+  --popover-foreground: #f2f0eb;
+  --primary: #f2f0eb;
+  --primary-foreground: #0c0c0b;
+  --secondary: rgb(242 240 235 / 0.08);
+  --secondary-foreground: #f2f0eb;
+  --muted: rgb(242 240 235 / 0.08);
+  --muted-foreground: #9b968c;
+  --accent: rgb(242 240 235 / 0.08);
+  --accent-foreground: #f2f0eb;
+  --tertiary: #4b4842;
+  --elevated: #232320;
+  --destructive: #e5654f;
+  --success: #5cb57a;
+  --border: rgb(242 240 235 / 0.1);
+  --input: rgb(242 240 235 / 0.1);
+  --ring: rgb(242 240 235 / 0.4);
+  --row-pressed: rgb(242 240 235 / 0.06);
+  --segment-thumb: #34332f;
+  --elevation: 0 0 0 1px rgb(242 240 235 / 0.05), 0 14px 34px -18px rgb(0 0 0 / 0.7);
 
-  --glass-bg: rgb(38 38 40 / 0.55);
-  --glass-edge: rgb(255 255 255 / 0.09);
-  --glass-highlight: rgb(255 255 255 / 0.22);
-  --glass-sheen: rgb(255 255 255 / 0.08);
-  --glass-shadow: 0 14px 36px -12px rgb(0 0 0 / 0.7), 0 3px 10px -4px rgb(0 0 0 / 0.4);
-  --lens: rgb(255 255 255 / 0.13);
+  --brass: #c9a66b;
+  --brass-strong: #d9b97f;
+  --brass-soft: rgb(201 166 107 / 0.16);
 
-  --pass-from: #48484a;
-  --pass-to: #1c1c1e;
+  --ink-from: #26251f;
+  --ink-to: #141412;
+  --ink-edge: rgb(255 255 255 / 0.08);
 
-  --map-land: #1c1c1e;
-  --map-block: #2a2a2d;
-  --map-road: #3d3d41;
-  --map-park: #1e2620;
-  --map-water: #1b222b;
+  --glass-bg: rgb(30 30 28 / 0.6);
+  --glass-edge: rgb(242 240 235 / 0.09);
+  --glass-highlight: rgb(255 255 255 / 0.16);
+  --glass-sheen: rgb(255 255 255 / 0.06);
+  --glass-shadow: 0 16px 36px -14px rgb(0 0 0 / 0.75), 0 3px 10px -4px rgb(0 0 0 / 0.4);
+
+  --map-block: #22211e;
+  --map-road: #34332e;
+  --map-park: #1f241d;
+  --map-water: #1a1f22;
 }
 
-/* Sheets sit one level up in dark mode, as on iOS: elevated surface, lighter cards. */
+/* Sheets sit one level up in dark mode so they separate from the page behind. */
 .dark [data-slot='drawer-content'] {
-  --background: #1c1c1e;
-  --card: #2c2c2e;
+  --background: #141412;
+  --card: #1f1e1b;
 }
 
 @theme inline {
@@ -127,65 +137,61 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-brass: var(--brass);
+  --color-brass-strong: var(--brass-strong);
+  --color-brass-soft: var(--brass-soft);
+  --color-ink-foreground: var(--ink-foreground);
 
-  --radius-sm: calc(var(--radius) - 10px);
-  --radius-md: calc(var(--radius) - 6px);
+  --radius-sm: calc(var(--radius) - 8px);
+  --radius-md: calc(var(--radius) - 4px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 6px);
+
+  --shadow-elevation: var(--elevation);
 }
 
 @theme {
-  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Inter Variable', 'Inter',
-    system-ui, sans-serif;
+  --font-sans: 'Heebo Variable', 'Heebo', system-ui, sans-serif;
+  --font-display: 'Frank Ruhl Libre Variable', 'Frank Ruhl Libre', Georgia, serif;
 
-  /* iOS Dynamic Type scale (default "Large" size) */
   --text-large-title: 2.125rem;
   --text-large-title--line-height: 2.5rem;
-  --text-large-title--letter-spacing: -0.025em;
+  --text-large-title--letter-spacing: -0.01em;
   --text-title1: 1.75rem;
   --text-title1--line-height: 2.125rem;
-  --text-title1--letter-spacing: -0.02em;
   --text-title2: 1.375rem;
   --text-title2--line-height: 1.75rem;
-  --text-title2--letter-spacing: -0.015em;
   --text-title3: 1.25rem;
   --text-title3--line-height: 1.5625rem;
-  --text-title3--letter-spacing: -0.012em;
   --text-headline: 1.0625rem;
   --text-headline--line-height: 1.375rem;
-  --text-headline--letter-spacing: -0.01em;
   --text-body: 1.0625rem;
-  --text-body--line-height: 1.375rem;
-  --text-body--letter-spacing: -0.01em;
+  --text-body--line-height: 1.5rem;
   --text-callout: 1rem;
-  --text-callout--line-height: 1.3125rem;
-  --text-callout--letter-spacing: -0.008em;
+  --text-callout--line-height: 1.375rem;
   --text-subhead: 0.9375rem;
-  --text-subhead--line-height: 1.25rem;
-  --text-subhead--letter-spacing: -0.006em;
+  --text-subhead--line-height: 1.3125rem;
   --text-footnote: 0.8125rem;
-  --text-footnote--line-height: 1.125rem;
+  --text-footnote--line-height: 1.1875rem;
   --text-caption: 0.75rem;
   --text-caption--line-height: 1rem;
   --text-caption2: 0.6875rem;
-  --text-caption2--line-height: 0.8125rem;
-  --text-caption2--letter-spacing: 0.01em;
+  --text-caption2--line-height: 0.875rem;
 }
 
 /* ---------------------------------------------------------------------------
- * Liquid Glass — a translucent, light-bending surface.
- * Blur + saturation lift the content behind it; an inner specular rim and a
- * soft top sheen give it thickness. Only opacity and transform ever animate.
+ * Surfaces
  * ------------------------------------------------------------------------- */
+
+/* Translucent floating surface: blur and saturation, a bright top rim, soft sheen. */
 @utility glass {
   position: relative;
   isolation: isolate;
   background-color: var(--glass-bg);
-  -webkit-backdrop-filter: blur(22px) saturate(1.9);
-  backdrop-filter: blur(22px) saturate(1.9);
+  -webkit-backdrop-filter: blur(22px) saturate(1.7);
+  backdrop-filter: blur(22px) saturate(1.7);
   box-shadow:
     inset 0 1px 0.5px -0.5px var(--glass-highlight),
-    inset 0 -0.5px 0.5px 0 var(--glass-sheen),
     inset 0 0 0 0.5px var(--glass-edge),
     var(--glass-shadow);
 
@@ -196,9 +202,7 @@
     z-index: -1;
     border-radius: inherit;
     pointer-events: none;
-    background: linear-gradient(180deg, var(--glass-sheen), transparent 45%),
-      radial-gradient(120% 80% at 50% 120%, var(--glass-sheen), transparent 60%);
-    opacity: 0.9;
+    background: linear-gradient(180deg, var(--glass-sheen), transparent 50%);
   }
 
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -206,27 +210,30 @@
   }
 }
 
-/* Glass bar used for collapsed navigation bars — no drop shadow, hairline edge. */
+/* Compact navigation bar that content scrolls beneath. */
 @utility glass-bar {
-  background-color: color-mix(in oklab, var(--background) 72%, transparent);
-  -webkit-backdrop-filter: blur(24px) saturate(1.8);
-  backdrop-filter: blur(24px) saturate(1.8);
+  background-color: color-mix(in oklab, var(--background) 76%, transparent);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  backdrop-filter: blur(24px) saturate(1.6);
   box-shadow: inset 0 -0.5px 0 0 var(--border);
 }
 
-/* Dark glass for controls that sit on top of the Wallet-style pass. */
-@utility glass-dark {
-  background-color: rgb(255 255 255 / 0.1);
-  -webkit-backdrop-filter: blur(16px) saturate(1.6);
-  backdrop-filter: blur(16px) saturate(1.6);
+/* The brand's dark card: ink gradient with a faint brass glow in one corner. */
+@utility surface-ink {
+  position: relative;
+  overflow: hidden;
+  color: var(--ink-foreground);
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgb(201 166 107 / 0.16), transparent 55%),
+    linear-gradient(165deg, var(--ink-from), var(--ink-to));
   box-shadow:
-    inset 0 1px 0.5px -0.5px rgb(255 255 255 / 0.35),
-    inset 0 0 0 0.5px rgb(255 255 255 / 0.08);
+    inset 0 0 0 1px var(--ink-edge),
+    0 24px 44px -26px rgb(0 0 0 / 0.65);
 }
 
 /* Spring-back press feedback without JavaScript. */
 @utility pressable {
-  transition: transform 0.45s var(--ease-spring), opacity 0.2s ease, background-color 0.2s ease;
+  transition: transform 0.45s var(--ease-spring), opacity 0.2s ease, background-color 0.2s ease, color 0.2s ease;
   -webkit-user-select: none;
   user-select: none;
 
@@ -244,10 +251,17 @@
     inset: 0;
     border-radius: inherit;
     pointer-events: none;
-    opacity: 0.11;
+    opacity: 0.1;
     mix-blend-mode: overlay;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
+}
+
+/* Loading placeholder sweep. */
+@utility shimmer {
+  background: linear-gradient(90deg, var(--muted) 25%, color-mix(in oklab, var(--muted) 40%, transparent) 50%, var(--muted) 75%);
+  background-size: 300% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
 }
 
 @utility scrollbar-none {
@@ -263,6 +277,15 @@
 
 @utility tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/* Latin wordmark: JACOB'S */
+@utility wordmark {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  direction: ltr;
+  unicode-bidi: isolate;
 }
 
 @layer base {
@@ -293,13 +316,12 @@
     color: var(--foreground);
     font-family: var(--font-sans);
     font-size: 1.0625rem;
-    line-height: 1.375rem;
+    line-height: 1.5rem;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     -webkit-tap-highlight-color: transparent;
     -webkit-text-size-adjust: 100%;
-    font-feature-settings: 'cv11', 'ss01';
   }
 
   button,
@@ -342,11 +364,21 @@
   }
 }
 
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
   }
 }

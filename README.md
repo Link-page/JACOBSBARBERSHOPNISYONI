@@ -1,6 +1,6 @@
-# Jacob's — Barbershop Booking App
+# JACOB'S — Barbershop Booking App
 
-A premium, mobile-first booking app for Jacob's Barbershop, designed to feel like a native iOS app: Apple Human Interface Guidelines, an iOS 26–inspired Liquid Glass design language, and a strict black-and-white palette.
+A premium, mobile-first booking app for JACOB'S barbershop, in Hebrew (RTL). It has its own identity: warm monochrome neutrals, ink surfaces, and a single brass accent. Display type is Frank Ruhl Libre (titles and numerals); UI text is Heebo.
 
 ![Light mode](docs/preview-light.jpg)
 ![Dark mode](docs/preview-dark.jpg)
@@ -12,7 +12,7 @@ npm install
 npm run dev
 ```
 
-To try it on your phone, run `npm run dev -- --host`, then open the network URL on the same Wi-Fi. In Safari, **Share → Add to Home Screen** installs it as a full-screen app with its own icon.
+To try it on your phone, run `npm run dev -- --host` and open the network URL on the same Wi-Fi. In Safari, **Share → Add to Home Screen** installs it full-screen with its own icon.
 
 ```bash
 npm run build     # type-check + production build to dist/
@@ -23,48 +23,70 @@ npm run lint      # oxlint
 
 | Tab | What it does |
 | --- | --- |
-| **Home** | Personalised greeting, the next appointment as a Wallet-style pass (directions, add to calendar, reschedule), a prominent booking button with the next free slot, lookbook carousel, services and prices, barbers with their next availability, live open/closed status, hours and map. |
-| **Lookbook** | Filterable masonry gallery. Tapping a look opens it full-screen with a shared-element transition; drag down to dismiss, or book that exact look. |
-| **Bookings** | Upcoming and history in a segmented control. Reschedule, cancel (with confirmation sheet), add to calendar, rebook past visits. |
-| **Profile** | Loyalty stamp card, light/dark/automatic appearance, notification preferences, contact links. |
+| **בית (Home)** | Greeting, next-appointment card (directions, add to calendar, reschedule), booking button with the next free slot, gallery, services and prices, team with each barber's next opening, live open/closed status, hours and map. |
+| **גלריה (Gallery)** | Filterable masonry; tap a look to open it full-screen (drag down to dismiss) and book it. |
+| **התורים (Bookings)** | Upcoming and history: reschedule, cancel (with confirmation), add to calendar, rebook. |
+| **פרופיל (Profile)** | Loyalty stamp card, appearance (automatic / light / dark), notification preferences, contact links. |
 
-**Booking flow** is a native-style card sheet (the app scales back behind it, as on iOS): service → barber (or "any barber") → date and time → review → confirmation. Lists advance automatically after a choice; availability updates per barber and per day; confirmed bookings can be exported to Calendar as `.ics`.
+### Booking flow
 
-Appointments and settings persist in `localStorage`.
+A sheet with five steps: **service → barber → day → time → summary**. Selections are kept when moving back and forth.
 
-## Stack
+- **Day: full-month calendar** (Sunday-first, RTL). Navigate with the arrows or by swiping between months. Each day shows its state:
+  - brass bar: appointments available (longer bar = more free slots)
+  - hollow ring: fully booked, but still tappable for the waiting list
+  - faded number: closed, past, or beyond the 60-day booking window (not tappable)
+- **Time: separate screen.** Tapping a day opens a vertical list of large time rows grouped into morning, afternoon and evening, with sticky group headers and a fixed Continue button.
+- **Waiting list.** A fully booked day opens the same time screen with an empty state and a **הצטרפות לרשימת המתנה** button. It registers the date, barber and service, then shows a confirmation; joining twice reports that you're already on the list.
 
-- **React 19 + TypeScript + Vite**
-- **Tailwind CSS v4**, with design tokens modelled on iOS system colours (`src/index.css`)
-- **shadcn/ui**: Button, Drawer (vaul), Avatar and Switch in `src/components/ui`, restyled to iOS proportions
-- **Motion** for spring physics, shared-layout transitions and gestures; loaded lazily with `LazyMotion` so it stays off the critical path
-- **Lucide** icons
+## No backend yet: what that means
 
-## Design system
+All data goes through `src/api`. The active implementation, `localBookingApi`, runs on the device:
 
-- **Type**: SF Pro on Apple devices (Inter elsewhere) on the iOS Dynamic Type scale, exposed as `text-large-title`, `text-title1`…`text-caption2`.
-- **Colour**: grouped background `#F2F2F7` with white cards; true black with `#1C1C1E` cards in dark mode. Sheets sit one elevation level up in dark mode.
-- **Liquid Glass**: the `glass` utility (blur, saturation, specular rim, soft sheen) is used where it earns its place: the floating tab bar, the booking button, sheet controls and collapsed navigation bars.
-- **Motion**: springs throughout (`src/lib/motion.ts`). Press feedback is a CSS spring via `linear()` easing (`pressable` utility). `prefers-reduced-motion` is respected.
-- **Navigation**: large titles that stretch on overscroll and hand off to a compact glass bar. Every tab stays mounted, so scroll position and state survive tab switches.
+- availability comes from a simulated diary (`src/api/local/shop-diary.ts`) with quiet days, busy days and fully booked days
+- bookings and waiting-list requests are stored in `localStorage`
 
-## Project layout
+It reports `connected: false`, and the UI reflects that honestly. Confirmations say the request was **saved on this device and not sent to the shop**; they never claim the shop received it. To go live, implement the `BookingApi` interface (`src/api/booking-api.ts`) against the real server and export it from `src/api/index.ts`. The UI needs no changes; the confirmation copy switches automatically.
+
+## Architecture
 
 ```
 src/
-  App.tsx                 shell: tab screens, tab bar, sheets
-  data/shop.ts            ← all business content (sample data — replace)
-  store/                  app state, persistence
-  screens/                home, lookbook, bookings, profile
-  features/booking/       booking sheet and its steps
-  features/lookbook/      full-screen look viewer
-  components/             app components (pass, list, tab bar, …)
-  components/ui/          shadcn/ui primitives
-  lib/                    schedule, formatting, calendar export, links
+  api/                     data access — the only layer that talks to a backend
+    booking-api.ts         BookingApi contract
+    types.ts               DTOs (DayAvailability, TimeSlot, WaitlistRequest, …)
+    local/                 on-device implementation, simulated diary, waitlist storage
+  booking/                 pure domain logic (no React)
+    availability.ts        day status and free slots from hours + occupancy
+    calendar.ts            month grid, browsable range
+    day-parts.ts           morning / afternoon / evening grouping
+    opening-status.ts      open now / next opening
+  hooks/                   useQuery (cached, race-safe), availability hooks, delayed loading flag
+  features/booking/
+    booking-sheet.tsx      composes header, step stage and action bar
+    use-booking-flow.ts    step machine and selections
+    booking-header.tsx · booking-actions.tsx · step-stage.tsx
+    steps/                 one file per step
+    calendar/              month calendar, header, weekday row, day cell, availability mark, legend
+    time/                  slot list, day-part section, slot row, skeleton
+    waitlist/              fully-booked empty state
+    hooks/                 confirm booking, join waiting list
+  features/lookbook/       full-screen look viewer
+  screens/                 home, lookbook, bookings, profile
+  components/              shared app components; components/ui = shadcn/ui primitives
+  data/shop.ts             ← all business content (sample data — replace)
+  store/                   app state and persistence
+  lib/                     dates, Hebrew formatting, direction, calendar export, links
 ```
+
+## Stack
+
+React 19, TypeScript, Vite, Tailwind CSS v4, shadcn/ui (Button, Drawer/vaul, Avatar, Switch), Motion (lazy-loaded with `LazyMotion`), Lucide icons.
+
+Motion is used for spring selection indicators (calendar day, time row, tabs), direction-aware step and month transitions, and the confirmation emblem. `prefers-reduced-motion` is respected throughout.
 
 ## Before launch
 
-- **Replace the sample content** in `src/data/shop.ts`: address, phone, WhatsApp, Instagram, hours, prices, team and the customer profile are all placeholders.
-- **Add real photos**: put images in `public/` and set `image` on a look (e.g. `image: '/lookbook/skin-fade.jpg'`) or `photo` on a barber. Until then, the lookbook shows generated monochrome artwork and barbers show monograms.
-- **Connect a backend**: availability is simulated deterministically in `src/lib/schedule.ts` (`slotsFor`), and bookings live in the browser. Swap those for the real booking API.
+- **Replace the sample content** in `src/data/shop.ts`: address, phone, WhatsApp, Instagram, hours, prices, team and the customer profile are placeholders.
+- **Add real photos**: put images in `public/` and set `image` on a look or `photo` on a barber.
+- **Connect the booking backend** (see above). Cancelling an appointment currently updates the device only and doesn't go through `src/api` yet.

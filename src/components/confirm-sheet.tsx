@@ -26,7 +26,7 @@ export function ConfirmSheet({
   title,
   message,
   confirmLabel,
-  cancelLabel = 'Not Now',
+  cancelLabel = 'לא עכשיו',
   onConfirm,
 }: ConfirmSheetProps) {
   return (

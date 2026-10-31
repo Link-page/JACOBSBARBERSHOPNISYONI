@@ -28,8 +28,8 @@ export function LookCard({ look, source, ratio, className }: LookCardProps) {
       whileTap={{ scale: 0.97 }}
       transition={spring}
       style={{ borderRadius: 24, aspectRatio: `1 / ${ratio ?? look.ratio}` }}
-      className={cn('relative block w-full overflow-hidden text-left', className)}
-      aria-label={`${look.title} by ${barberById(look.barberId).name}`}
+      className={cn('relative block w-full overflow-hidden text-start', className)}
+      aria-label={`${look.title}, עבודה של ${barberById(look.barberId).name}`}
     >
       <LookArtwork look={look} />
       <span
@@ -40,8 +40,8 @@ export function LookCard({ look, source, ratio, className }: LookCardProps) {
             : 'bg-linear-to-t from-black/70 via-black/25 to-transparent text-white',
         )}
       >
-        <span className="text-caption2 font-semibold tracking-[0.08em] uppercase opacity-60">{look.category}</span>
-        <span className="text-headline leading-tight font-semibold">{look.title}</span>
+        <span className="text-caption font-medium opacity-70">{look.category}</span>
+        <span className="font-display text-headline leading-tight font-medium">{look.title}</span>
       </span>
     </m.button>
   )

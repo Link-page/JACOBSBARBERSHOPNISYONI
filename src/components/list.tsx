@@ -18,24 +18,24 @@ export function ListGroup({
   return (
     <div className={className}>
       {header && (
-        <p className="px-4 pb-2 text-footnote font-medium tracking-[0.03em] text-muted-foreground uppercase">{header}</p>
+        <p className="px-4 pb-2 text-footnote font-medium text-muted-foreground">{header}</p>
       )}
-      <div className="overflow-hidden rounded-[24px] bg-card [&>*:last-child_[data-row-body]]:border-b-0">{children}</div>
+      <div className="overflow-hidden rounded-[24px] bg-card shadow-elevation [&>*:last-child_[data-row-body]]:border-b-0">{children}</div>
       {footer && <p className="px-4 pt-2 text-footnote text-muted-foreground">{footer}</p>}
     </div>
   )
 }
 
-/** Monochrome rounded-square glyph, like the icons in Settings. */
+/** Line icon on a soft round mark. */
 export function IconTile({ icon: Icon, className }: { icon: LucideIcon; className?: string }) {
   return (
     <span
       className={cn(
-        'grid size-[30px] shrink-0 place-items-center rounded-[8px] bg-primary text-primary-foreground',
+        'grid size-[34px] shrink-0 place-items-center rounded-full bg-muted text-foreground',
         className,
       )}
     >
-      <Icon className="size-[17px]" strokeWidth={2} />
+      <Icon className="size-[17px]" strokeWidth={1.8} />
     </span>
   )
 }
@@ -72,7 +72,7 @@ export function ListRow({
       {(leading || icon) && <span className="py-2.5">{leading ?? (icon && <IconTile icon={icon} />)}</span>}
       <span
         data-row-body
-        className="flex min-h-[52px] min-w-0 flex-1 items-center gap-3 border-b-[0.5px] py-2.5 pr-4"
+        className="flex min-h-[54px] min-w-0 flex-1 items-center gap-3 border-b-[0.5px] py-2.5 pe-4"
       >
         <span className="min-w-0 flex-1">
           <span className={cn('block truncate text-body', destructive && 'text-destructive')}>{title}</span>
@@ -80,12 +80,12 @@ export function ListRow({
         </span>
         {value && <span className="shrink-0 text-body text-muted-foreground tabular">{value}</span>}
         {trailing}
-        {chevron && <ChevronRight className="-mr-1 size-[18px] shrink-0 text-tertiary" strokeWidth={2.5} />}
+        {chevron && <ChevronRight className="-me-1 size-[18px] shrink-0 text-tertiary rtl:-scale-x-100" strokeWidth={2.4} />}
       </span>
     </>
   )
 
-  const base = 'flex w-full items-center gap-3.5 pl-4 text-left'
+  const base = 'flex w-full items-center gap-3.5 ps-4 text-start'
   const interactive = 'transition-colors duration-150 active:bg-[var(--row-pressed)]'
 
   if (href) {

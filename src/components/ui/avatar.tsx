@@ -19,13 +19,13 @@ function AvatarImage({ className, ...props }: React.ComponentProps<typeof Avatar
   )
 }
 
-/** Contacts-style monogram: soft graphite gradient with white initials. */
+/** JACOB'S monogram: an ink disc with a brass serif initial. */
 function AvatarFallback({ className, ...props }: React.ComponentProps<typeof AvatarPrimitive.Fallback>) {
   return (
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
       className={cn(
-        'flex size-full items-center justify-center rounded-full bg-[linear-gradient(180deg,#a9aeb9,#7f838d)] font-semibold tracking-wide text-white',
+        'flex size-full items-center justify-center rounded-full bg-[linear-gradient(160deg,var(--ink-from),var(--ink-to))] font-display font-medium text-brass shadow-[inset_0_0_0_1px_var(--ink-edge)]',
         className,
       )}
       {...props}

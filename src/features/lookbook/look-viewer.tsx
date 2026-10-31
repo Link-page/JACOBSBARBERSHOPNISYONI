@@ -50,26 +50,26 @@ export function LookViewer() {
               animate={{ opacity: 1, y: 0, transition: { ...spring, delay: 0.08 } }}
               exit={{ opacity: 0, y: 12, transition: { duration: 0.15 } }}
             >
-              <p className="text-footnote font-semibold tracking-[0.08em] text-muted-foreground uppercase">{data.category}</p>
-              <h2 className="text-title1 font-bold">{data.title}</h2>
+              <p className="text-footnote font-medium text-brass">{data.category}</p>
+              <h2 className="font-display text-title1 font-medium">{data.title}</h2>
               <LookMeta barberId={data.barberId} serviceId={data.serviceId} />
               <Button
                 size="lg"
                 className="mt-5 w-full"
                 onClick={() => openBooking({ mode: 'new', serviceId: data.serviceId, barberId: data.barberId })}
               >
-                Book This Look
+                קביעת תור לסגנון הזה
               </Button>
             </m.div>
           </div>
 
           <m.div
-            className="absolute top-[calc(env(safe-area-inset-top)+28px)] right-7"
+            className="absolute end-7 top-[calc(env(safe-area-inset-top)+28px)]"
             initial={{ opacity: 0, scale: 0.6 }}
             animate={{ opacity: 1, scale: 1, transition: { ...spring, delay: 0.1 } }}
             exit={{ opacity: 0, scale: 0.6, transition: { duration: 0.12 } }}
           >
-            <Button variant="glass" size="icon-lg" onClick={closeLook} aria-label="Close">
+            <Button variant="glass" size="icon-lg" onClick={closeLook} aria-label="סגירה">
               <X strokeWidth={2.5} />
             </Button>
           </m.div>
@@ -83,15 +83,15 @@ function LookMeta({ barberId, serviceId }: { barberId: string; serviceId: string
   const barber = barberById(barberId)
   const service = serviceById(serviceId)
   return (
-    <div className="mt-4 flex items-center gap-3 rounded-[22px] bg-card p-3">
+    <div className="mt-4 flex items-center gap-3 rounded-[22px] bg-card p-3 shadow-elevation">
       <BarberAvatar barber={barber} className="size-11 text-headline" />
       <div className="min-w-0 flex-1">
-        <p className="text-headline font-semibold">By {barber.name}</p>
+        <p className="text-headline font-semibold">עבודה של {barber.name}</p>
         <p className="truncate text-footnote text-muted-foreground">
           {service.name} · {formatDuration(service.duration)}
         </p>
       </div>
-      <p className="pr-1 text-headline font-semibold tabular">{formatPrice(service.price)}</p>
+      <p className="pe-1 text-headline font-semibold tabular">{formatPrice(service.price)}</p>
     </div>
   )
 }

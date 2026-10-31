@@ -10,7 +10,8 @@ import { SegmentedControl } from '@/components/segmented-control'
 import { Button } from '@/components/ui/button'
 import { barberById, serviceById } from '@/data/shop'
 import { addToCalendar } from '@/lib/calendar'
-import { formatPrice, formatTime, relativeDay, shortDate } from '@/lib/format'
+import { inlineSign } from '@/lib/direction'
+import { endTime, formatPrice, formatTime, relativeDay, shortDate } from '@/lib/format'
 import { spring } from '@/lib/motion'
 import { useApp } from '@/store/app-context'
 import type { Appointment } from '@/store/types'
@@ -23,22 +24,22 @@ export function BookingsScreen() {
   const [cancelling, setCancelling] = useState<Appointment | null>(null)
 
   return (
-    <ScrollScreen title="Bookings">
+    <ScrollScreen title="התורים שלי">
       <SegmentedControl
         id="bookings"
         className="mt-5"
         value={segment}
         onChange={setSegment}
         options={[
-          { value: 'upcoming', label: 'Upcoming' },
-          { value: 'history', label: 'History' },
+          { value: 'upcoming', label: 'קרובים' },
+          { value: 'history', label: 'היסטוריה' },
         ]}
       />
 
       <AnimatePresence mode="wait" initial={false}>
         <m.div
           key={segment}
-          initial={{ opacity: 0, x: segment === 'history' ? 24 : -24 }}
+          initial={{ opacity: 0, x: (segment === 'history' ? 24 : -24) * inlineSign() }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, transition: { duration: 0.12 } }}
           transition={spring}
@@ -57,10 +58,10 @@ export function BookingsScreen() {
                   type="button"
                   onClick={() => openBooking()}
                   transition={spring}
-                  className="pressable flex h-[60px] items-center justify-center gap-2 rounded-[26px] border-[1.5px] border-dashed border-tertiary text-subhead font-semibold text-muted-foreground"
+                  className="pressable flex h-[60px] items-center justify-center gap-2 rounded-[24px] border-[1.5px] border-dashed border-brass/45 text-subhead font-semibold text-muted-foreground"
                 >
-                  <Plus className="size-[18px]" strokeWidth={2.5} />
-                  New Appointment
+                  <Plus className="size-[18px] text-brass" strokeWidth={2.2} />
+                  תור חדש
                 </m.button>
               </div>
             ) : (
@@ -75,14 +76,14 @@ export function BookingsScreen() {
       <ConfirmSheet
         open={!!cancelling}
         onOpenChange={(open) => !open && setCancelling(null)}
-        title="Cancel appointment?"
+        title="לבטל את התור?"
         message={
           cancelling
-            ? `${serviceById(cancelling.serviceId).name} with ${barberById(cancelling.barberId).name} on ${shortDate(new Date(cancelling.start))} at ${formatTime(new Date(cancelling.start))}.`
+            ? `${serviceById(cancelling.serviceId).name} אצל ${barberById(cancelling.barberId).name}, ${shortDate(new Date(cancelling.start))} ב-${formatTime(new Date(cancelling.start))}.`
             : ''
         }
-        confirmLabel="Cancel Appointment"
-        cancelLabel="Keep Appointment"
+        confirmLabel="ביטול התור"
+        cancelLabel="השארת התור"
         onConfirm={() => cancelling && cancel(cancelling.id)}
       />
     </ScrollScreen>
@@ -94,6 +95,7 @@ function UpcomingCard({ appointment, onCancel }: { appointment: Appointment; onC
   const service = serviceById(appointment.serviceId)
   const barber = barberById(appointment.barberId)
   const start = new Date(appointment.start)
+  const time = formatTime(start)
 
   return (
     <m.article
@@ -102,20 +104,18 @@ function UpcomingCard({ appointment, onCancel }: { appointment: Appointment; onC
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.94, transition: { duration: 0.2 } }}
       transition={spring}
-      className="rounded-[26px] bg-card p-4"
+      className="rounded-[24px] bg-card p-4 shadow-elevation"
     >
-      <div className="flex items-center gap-3.5">
+      <div className="flex items-center gap-4">
         <DateTile date={start} />
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 border-s border-border ps-4">
           <p className="truncate text-headline font-semibold">{service.name}</p>
-          <p className="truncate text-subhead text-muted-foreground">
-            {formatTime(start)} · with {barber.name}
+          <p className="truncate text-subhead text-muted-foreground tabular">
+            {time}–{endTime(time, service.duration)} · אצל {barber.name}
           </p>
+          <p className="text-caption font-medium text-brass">{relativeDay(start, now)}</p>
         </div>
-        <div className="text-right">
-          <p className="text-headline font-semibold tabular">{formatPrice(service.price)}</p>
-          <p className="text-caption font-medium text-muted-foreground">{relativeDay(start, now)}</p>
-        </div>
+        <p className="self-start text-headline font-semibold tabular">{formatPrice(service.price)}</p>
       </div>
       <div className="mt-4 flex gap-2">
         <Button
@@ -124,18 +124,12 @@ function UpcomingCard({ appointment, onCancel }: { appointment: Appointment; onC
           className="h-10 flex-1"
           onClick={() => openBooking({ mode: 'reschedule', appointmentId: appointment.id })}
         >
-          Reschedule
+          שינוי מועד
         </Button>
         <Button size="sm" variant="destructive" className="h-10 flex-1" onClick={onCancel}>
-          Cancel
+          ביטול
         </Button>
-        <Button
-          size="icon"
-          variant="secondary"
-          className="size-10"
-          onClick={() => addToCalendar(appointment)}
-          aria-label="Add to Calendar"
-        >
+        <Button size="icon" variant="secondary" className="size-10" onClick={() => addToCalendar(appointment)} aria-label="הוספה ליומן">
           <CalendarPlus />
         </Button>
       </div>
@@ -146,21 +140,20 @@ function UpcomingCard({ appointment, onCancel }: { appointment: Appointment; onC
 function History({ appointments }: { appointments: Appointment[] }) {
   const { openBooking } = useApp()
   if (!appointments.length) {
-    return <p className="mt-16 text-center text-subhead text-muted-foreground">Your past visits will appear here.</p>
+    return <p className="mt-16 text-center text-subhead text-muted-foreground">ביקורים קודמים יופיעו כאן.</p>
   }
   return (
     <ListGroup>
       {appointments.map((a) => {
         const service = serviceById(a.serviceId)
         const barber = barberById(a.barberId)
-        const start = new Date(a.start)
         const cancelled = a.status === 'cancelled'
         return (
           <ListRow
             key={a.id}
-            leading={<DateTile date={start} className="size-11 rounded-[12px]" muted={cancelled} />}
+            leading={<DateTile date={new Date(a.start)} muted={cancelled} />}
             title={<span className={cancelled ? 'text-muted-foreground line-through' : undefined}>{service.name}</span>}
-            subtitle={cancelled ? 'Cancelled' : `with ${barber.name} · ${formatPrice(service.price)}`}
+            subtitle={cancelled ? 'בוטל' : `אצל ${barber.name} · ${formatPrice(service.price)}`}
             trailing={
               <Button
                 size="sm"
@@ -168,8 +161,8 @@ function History({ appointments }: { appointments: Appointment[] }) {
                 className="h-8 px-3 text-footnote"
                 onClick={() => openBooking({ mode: 'new', serviceId: a.serviceId, barberId: a.barberId })}
               >
-                <RotateCcw className="size-3.5" strokeWidth={2.5} />
-                Rebook
+                <RotateCcw className="size-3.5" strokeWidth={2.4} />
+                שוב
               </Button>
             }
           />
@@ -183,13 +176,13 @@ function EmptyState() {
   const { openBooking } = useApp()
   return (
     <div className="flex flex-col items-center px-6 pt-14 text-center">
-      <span className="grid size-16 place-items-center rounded-full bg-card">
-        <CalendarDays className="size-7 text-muted-foreground" />
+      <span className="grid size-16 place-items-center rounded-full bg-brass-soft">
+        <CalendarDays className="size-7 text-brass" strokeWidth={1.7} />
       </span>
-      <p className="mt-4 text-title3 font-bold">No upcoming appointments</p>
-      <p className="mt-1 text-subhead text-muted-foreground">Book your next cut in under a minute.</p>
+      <p className="mt-4 font-display text-title2 font-medium">אין תורים קרובים</p>
+      <p className="mt-1 text-subhead text-muted-foreground">קביעת תור לוקחת פחות מדקה.</p>
       <Button className="mt-6 px-8" onClick={() => openBooking()}>
-        Book Now
+        קביעת תור
       </Button>
     </div>
   )

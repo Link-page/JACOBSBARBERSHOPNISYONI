@@ -21,7 +21,7 @@ export function MapPreview() {
         <span className="relative grid size-10 place-items-center rounded-full bg-primary text-primary-foreground shadow-[0_6px_16px_rgb(0_0_0/0.3)] ring-[3px] ring-card">
           <Scissors className="size-[18px]" strokeWidth={2.2} />
         </span>
-        <span className="glass absolute top-1/2 left-full ml-2 -translate-y-1/2 rounded-full px-2.5 py-1 text-caption font-semibold whitespace-nowrap">
+        <span className="glass wordmark absolute start-full top-1/2 ms-2 -translate-y-1/2 rounded-full px-2.5 py-1 text-[10px] whitespace-nowrap">
           {shop.name}
         </span>
       </div>

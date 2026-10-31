@@ -7,7 +7,7 @@ import { lookCategories, looks, type Look, type LookCategory } from '@/data/shop
 import { spring, springSnappy } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
-type Filter = 'All' | LookCategory
+type Filter = 'הכול' | LookCategory
 
 /** Greedy masonry: each look goes to whichever column is currently shorter. */
 function toColumns(items: Look[]) {
@@ -22,16 +22,16 @@ function toColumns(items: Look[]) {
 }
 
 export function LookbookScreen() {
-  const [filter, setFilter] = useState<Filter>('All')
+  const [filter, setFilter] = useState<Filter>('הכול')
   const columns = useMemo(
-    () => toColumns(filter === 'All' ? looks : looks.filter((l) => l.category === filter)),
+    () => toColumns(filter === 'הכול' ? looks : looks.filter((l) => l.category === filter)),
     [filter],
   )
 
   return (
-    <ScrollScreen title="Lookbook" eyebrow="Recent work">
+    <ScrollScreen title="גלריה" eyebrow="עבודות אחרונות">
       <div className="scrollbar-none -mx-5 mt-4 flex gap-2 overflow-x-auto px-5" role="tablist">
-        {(['All', ...lookCategories] as Filter[]).map((option) => {
+        {(['הכול', ...lookCategories] as Filter[]).map((option) => {
           const active = option === filter
           return (
             <button
@@ -42,7 +42,7 @@ export function LookbookScreen() {
               onClick={() => setFilter(option)}
               className={cn(
                 'pressable relative h-9 shrink-0 rounded-full px-4 text-subhead font-semibold',
-                !active && 'bg-card',
+                !active && 'bg-card shadow-elevation',
               )}
             >
               {active && (

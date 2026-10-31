@@ -1,7 +1,6 @@
-import { AtSign, Bell, Check, Crown, MapPin, MessageCircle, Phone, Sparkles } from 'lucide-react'
+import { AtSign, Bell, Check, MapPin, MessageCircle, Phone, Sparkles } from 'lucide-react'
 import { useMemo } from 'react'
 
-import { passSurface } from '@/components/appointment-pass'
 import { ListGroup, ListRow } from '@/components/list'
 import { ScrollScreen } from '@/components/scroll-screen'
 import { SegmentedControl } from '@/components/segmented-control'
@@ -25,72 +24,72 @@ export function ProfileScreen() {
   }, [past])
 
   return (
-    <ScrollScreen title="Profile">
-      <div className="mt-5 flex flex-col items-center rounded-[28px] bg-card px-5 pt-7 pb-5 text-center">
-        <Avatar className="size-[88px]">
-          <AvatarFallback className="text-[34px]">{user.initials}</AvatarFallback>
+    <ScrollScreen title="פרופיל">
+      <div className="mt-5 flex flex-col items-center rounded-[28px] bg-card px-5 pt-7 pb-5 text-center shadow-elevation">
+        <Avatar aria-hidden className="size-[88px]">
+          <AvatarFallback className="text-[38px]">{user.initial}</AvatarFallback>
         </Avatar>
-        <p className="mt-3.5 text-title2 font-bold">
+        <p className="mt-3.5 font-display text-title2 font-medium">
           {user.firstName} {user.lastName}
         </p>
-        <p className="text-subhead text-muted-foreground tabular">{user.phone}</p>
-        <dl className="mt-5 grid w-full grid-cols-3 divide-x-[0.5px] divide-border rounded-[18px] bg-elevated py-3 dark:bg-muted">
-          <Stat label="Visits" value={String(stats.visits)} />
-          <Stat label="Barber" value={stats.favorite} />
-          <Stat label="Member" value={user.memberSince.split(' ')[1]} />
+        <p className="text-subhead text-muted-foreground tabular" dir="ltr">
+          {user.phone}
+        </p>
+        <dl className="mt-5 grid w-full grid-cols-3 divide-x divide-border rounded-[18px] bg-elevated py-3 dark:bg-muted">
+          <Stat label="ביקורים" value={String(stats.visits)} />
+          <Stat label="ספר קבוע" value={stats.favorite} />
+          <Stat label="חבר מאז" value={user.memberSince.split(' ')[1]} />
         </dl>
       </div>
 
       <LoyaltyCard />
 
-      <ListGroup header="Appearance" className="mt-9">
+      <ListGroup header="מראה" className="mt-9">
         <div className="p-3">
           <SegmentedControl<Appearance>
             id="appearance"
             value={appearance}
             onChange={setAppearance}
             options={[
-              { value: 'system', label: 'Automatic' },
-              { value: 'light', label: 'Light' },
-              { value: 'dark', label: 'Dark' },
+              { value: 'system', label: 'אוטומטי' },
+              { value: 'light', label: 'בהיר' },
+              { value: 'dark', label: 'כהה' },
             ]}
           />
         </div>
       </ListGroup>
 
-      <ListGroup
-        header="Notifications"
-        className="mt-9"
-        footer="Reminders arrive the evening before and one hour before your appointment."
-      >
+      <ListGroup header="התראות" className="mt-9" footer="ההעדפות נשמרות במכשיר הזה.">
         <ListRow
           icon={Bell}
-          title="Appointment reminders"
+          title="תזכורות לתורים"
           trailing={
             <Switch
               checked={preferences.reminders}
               onCheckedChange={(v) => setPreference('reminders', v)}
-              aria-label="Appointment reminders"
+              aria-label="תזכורות לתורים"
             />
           }
         />
         <ListRow
           icon={Sparkles}
-          title="Offers & news"
+          title="מבצעים ועדכונים"
           trailing={
-            <Switch checked={preferences.offers} onCheckedChange={(v) => setPreference('offers', v)} aria-label="Offers & news" />
+            <Switch checked={preferences.offers} onCheckedChange={(v) => setPreference('offers', v)} aria-label="מבצעים ועדכונים" />
           }
         />
       </ListGroup>
 
-      <ListGroup header="Contact" className="mt-9">
-        <ListRow icon={Phone} title="Call the shop" value={shop.phone} chevron href={links.call} />
-        <ListRow icon={MessageCircle} title="WhatsApp" chevron href={links.whatsapp} />
-        <ListRow icon={AtSign} title="Instagram" value={`@${shop.instagram}`} chevron href={links.instagram} />
-        <ListRow icon={MapPin} title="Directions" subtitle={links.fullAddress} chevron href={links.directions} />
+      <ListGroup header="יצירת קשר" className="mt-9">
+        <ListRow icon={Phone} title="התקשרות למספרה" value={<span dir="ltr">{shop.phone}</span>} chevron href={links.call} />
+        <ListRow icon={MessageCircle} title="וואטסאפ" chevron href={links.whatsapp} />
+        <ListRow icon={AtSign} title="אינסטגרם" value={<span dir="ltr">@{shop.instagram}</span>} chevron href={links.instagram} />
+        <ListRow icon={MapPin} title="ניווט למספרה" subtitle={links.fullAddress} chevron href={links.directions} />
       </ListGroup>
 
-      <p className="mt-9 text-center text-footnote text-muted-foreground">{shop.legalName} · Version 1.0</p>
+      <p className="mt-9 flex justify-center gap-2 text-footnote text-muted-foreground">
+        <span className="wordmark">{shop.name}</span>· גרסה 1.0
+      </p>
     </ScrollScreen>
   )
 }
@@ -99,23 +98,23 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex min-w-0 flex-col items-center px-2">
       <dt className="order-2 text-caption text-muted-foreground">{label}</dt>
-      <dd className="w-full truncate text-headline font-semibold tabular">{value}</dd>
+      <dd className="w-full truncate font-display text-title3 font-medium tabular">{value}</dd>
     </div>
   )
 }
 
-/** Stamp card in the style of a Wallet loyalty pass. */
+/** Stamp card: brass stamps fill toward a free cut. */
 function LoyaltyCard() {
   const remaining = user.stampsForReward - user.stamps
   return (
-    <div className={cn(passSurface, 'mt-4 rounded-[28px] p-5')}>
+    <div className="surface-ink grain mt-4 rounded-[28px] p-5">
       <div className="relative">
-        <div className="flex items-center justify-between">
-          <p className="text-caption font-semibold tracking-[0.14em] text-white/55 uppercase">{shop.name} Club</p>
-          <Crown className="size-4 text-white/70" />
-        </div>
-        <p className="mt-3 text-title2 font-bold text-balance">
-          {remaining} more {remaining === 1 ? 'visit' : 'visits'} to a free cut
+        <p className="flex items-baseline gap-2 text-footnote text-ink-foreground/60">
+          מועדון
+          <span className="wordmark text-[11px] text-brass">{shop.name}</span>
+        </p>
+        <p className="mt-2 font-display text-title2 font-medium text-balance">
+          {remaining === 1 ? 'עוד ביקור אחד לתספורת חינם' : `עוד ${remaining} ביקורים לתספורת חינם`}
         </p>
         <div className="mt-5 grid grid-cols-10 gap-1.5">
           {Array.from({ length: user.stampsForReward }, (_, i) => (
@@ -123,10 +122,10 @@ function LoyaltyCard() {
               key={i}
               className={cn(
                 'grid aspect-square place-items-center rounded-full',
-                i < user.stamps ? 'bg-white text-black' : 'border border-dashed border-white/30',
+                i < user.stamps ? 'bg-brass text-[#141412]' : 'border border-dashed border-white/25',
               )}
             >
-              {i < user.stamps && <Check className="size-3" strokeWidth={3.25} />}
+              {i < user.stamps && <Check className="size-3" strokeWidth={3} />}
             </span>
           ))}
         </div>

@@ -7,23 +7,22 @@ import { useApp } from '@/store/app-context'
 import type { Tab } from '@/store/types'
 
 const items: { id: Tab; label: string; icon: typeof House }[] = [
-  { id: 'home', label: 'Home', icon: House },
-  { id: 'lookbook', label: 'Lookbook', icon: Images },
-  { id: 'bookings', label: 'Bookings', icon: CalendarDays },
-  { id: 'profile', label: 'Profile', icon: UserRound },
+  { id: 'home', label: 'בית', icon: House },
+  { id: 'lookbook', label: 'גלריה', icon: Images },
+  { id: 'bookings', label: 'התורים', icon: CalendarDays },
+  { id: 'profile', label: 'פרופיל', icon: UserRound },
 ]
 
 /**
- * Floating Liquid Glass tab bar. A glass lens glides between tabs; the
- * primary action — booking — sits apart in its own prominent glass button,
- * the way iOS 26 separates search from tabs.
+ * Floating glass navigation. A brass notch glides to the active tab; booking —
+ * the app's main action — has its own ink button beside the bar.
  */
 export function TabBar() {
   const { tab, setTab, openBooking, upcoming } = useApp()
 
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex items-end gap-2.5 px-4 pb-[max(env(safe-area-inset-bottom),18px)]">
-      <nav aria-label="Main" className="glass pointer-events-auto flex h-16 flex-1 rounded-full p-[5px]">
+      <nav aria-label="ניווט ראשי" className="glass pointer-events-auto flex h-16 flex-1 rounded-[24px] px-1">
         {items.map(({ id, label, icon: Icon }) => {
           const active = tab === id
           return (
@@ -33,26 +32,26 @@ export function TabBar() {
               onClick={() => setTab(id)}
               aria-current={active ? 'page' : undefined}
               className={cn(
-                'relative flex flex-1 flex-col items-center justify-center gap-[3px] rounded-full transition-colors duration-200',
-                active ? 'text-foreground' : 'text-foreground/55',
+                'relative flex flex-1 flex-col items-center justify-center gap-1 transition-colors duration-200',
+                active ? 'text-foreground' : 'text-foreground/50',
               )}
             >
               {active && (
                 <m.span
-                  layoutId="tab-lens"
+                  layoutId="tab-notch"
                   transition={springSnappy}
-                  className="absolute inset-0 rounded-full bg-[var(--lens)] shadow-[inset_0_1px_0.5px_var(--glass-highlight)]"
+                  className="absolute top-0 h-[3px] w-6 rounded-b-full bg-brass"
                 />
               )}
               <m.span whileTap={{ scale: 0.84 }} transition={springSnappy} className="relative">
-                <Icon className="size-[23px]" strokeWidth={active ? 2.25 : 1.85} />
+                <Icon className="size-[22px]" strokeWidth={active ? 2.1 : 1.7} />
                 {id === 'bookings' && upcoming.length > 0 && (
-                  <span className="absolute -top-1 -right-2 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] leading-none font-bold text-primary-foreground tabular">
+                  <span className="absolute -end-2 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-brass px-1 text-[10px] leading-none font-bold text-white tabular">
                     {upcoming.length}
                   </span>
                 )}
               </m.span>
-              <span className="relative text-[10px] leading-none font-semibold tracking-[0.01em]">{label}</span>
+              <span className={cn('text-[11px] leading-none', active ? 'font-semibold' : 'font-medium')}>{label}</span>
             </button>
           )
         })}
@@ -63,10 +62,10 @@ export function TabBar() {
         onClick={() => openBooking()}
         whileTap={{ scale: 0.88 }}
         transition={springSnappy}
-        aria-label="Book an appointment"
-        className="glass pointer-events-auto grid size-16 shrink-0 place-items-center rounded-full !bg-primary text-primary-foreground"
+        aria-label="קביעת תור"
+        className="pointer-events-auto grid size-16 shrink-0 place-items-center rounded-[24px] bg-primary text-primary-foreground shadow-[0_16px_30px_-14px_rgb(0_0_0/0.55),inset_0_0_0_1px_var(--brass-soft)]"
       >
-        <Plus className="size-7" strokeWidth={2.2} />
+        <Plus className="size-7" strokeWidth={1.9} />
       </m.button>
     </div>
   )

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 
+import { hoursFor } from '@/booking/availability'
 import { useNow } from '@/hooks/use-now'
-import { addDays, combine, dayKey, hoursFor, toMinutes } from '@/lib/schedule'
+import { addDays, combine, dayKey, toMinutes } from '@/lib/date'
+import { newId } from '@/lib/id'
 
 import { AppContext, type AppContextValue } from './app-context'
 import type { Appearance, Appointment, BookingRequest, LookViewer, Preferences, Tab } from './types'
@@ -30,10 +32,6 @@ function save(data: Persisted) {
   }
 }
 
-// crypto.randomUUID is unavailable on plain-http LAN previews, so fall back.
-const newId = () =>
-  globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`
-
 /** Nearest day (searching in `step` direction) the shop is open until at least 20:00. */
 function fullDayFrom(date: Date, step: 1 | -1) {
   let d = date
@@ -55,7 +53,7 @@ function seedAppointments(now: Date): Appointment[] {
   ]
 }
 
-const themeColor = { light: '#f2f2f7', dark: '#000000' }
+const themeColor = { light: '#f4f3ef', dark: '#0c0c0b' }
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const now = useNow()
@@ -104,22 +102,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [appointments, now])
 
-  const book = useCallback<AppContextValue['book']>(({ serviceId, barberId, start }) => {
-    const appointment: Appointment = { id: newId(), serviceId, barberId, start: start.toISOString(), status: 'booked' }
-    setAppointments((list) => [...list, appointment])
-    return appointment
+  const saveAppointment = useCallback((appointment: Appointment) => {
+    setAppointments((list) =>
+      list.some((a) => a.id === appointment.id)
+        ? list.map((a) => (a.id === appointment.id ? appointment : a))
+        : [...list, appointment],
+    )
   }, [])
-
-  const reschedule = useCallback<AppContextValue['reschedule']>(
-    (id, start, barberId) => {
-      const existing = appointments.find((a) => a.id === id)
-      if (!existing) return undefined
-      const updated = { ...existing, barberId, start: start.toISOString() }
-      setAppointments((list) => list.map((a) => (a.id === id ? updated : a)))
-      return updated
-    },
-    [appointments],
-  )
 
   const cancel = useCallback((id: string) => {
     setAppointments((list) => list.map((a) => (a.id === id ? { ...a, status: 'cancelled' } : a)))
@@ -146,8 +135,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       appointments,
       upcoming,
       past,
-      book,
-      reschedule,
+      saveAppointment,
       cancel,
       appearance,
       setAppearance,
@@ -160,7 +148,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       openLook,
       closeLook,
     }),
-    [now, tab, appointments, upcoming, past, book, reschedule, cancel, appearance, preferences, setPreference, booking, openBooking, closeBooking, look, openLook, closeLook],
+    [now, tab, appointments, upcoming, past, saveAppointment, cancel, appearance, preferences, setPreference, booking, openBooking, closeBooking, look, openLook, closeLook],
   )
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
