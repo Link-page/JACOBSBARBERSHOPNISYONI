@@ -1,30 +1,33 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 import { toAdminError } from '../errors'
+import { supabaseSettings } from '../config'
 
 /**
- * The browser only ever holds the project URL and the public anon key. Both are
- * safe to ship: every table is protected by Row Level Security, and privileged
- * work happens in database functions that check the caller's role.
+ * Browser client for the admin. It only ever holds the project URL and the
+ * publishable key; Row Level Security and checked database functions decide
+ * what each signed-in user may do.
  */
-const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
-
-
-
-let client: SupabaseClient | null = null
-export function supabase(): SupabaseClient {
-  if (!url || !anonKey) throw toAdminError('not_configured')
-  client ??= createClient(url, anonKey, {
+export function createBrowserClient(): SupabaseClient {
+  return createClient(supabaseSettings.url, supabaseSettings.key, {
     auth: { persistSession: true, autoRefreshToken: true, storageKey: 'jacobs.admin.session' },
   })
-  return client
 }
 
 /** Returns data or throws a translated AdminError. */
 export function unwrap<T>(result: { data: T | null; error: unknown }): T {
   if (result.error) throw toAdminError(result.error)
   return result.data as T
+}
+
+/**
+ * For updates and deletes that return their rows. Row Level Security filters
+ * forbidden rows out silently, so zero rows means the change did not happen.
+ */
+export function changedRows<T>(result: { data: T[] | null; error: unknown }): T[] {
+  const rows = unwrap(result) ?? []
+  if (rows.length === 0) throw toAdminError('forbidden')
+  return rows
 }
 
 /** Local day boundaries as ISO instants (the admin runs in the shop's time zone). */

@@ -31,6 +31,11 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm test
+      - name: Refuse unsafe Supabase settings (a secret key must never be published)
+        run: node scripts/check-supabase-env.ts
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
       - run: npm run build
         env:
           # Public Supabase settings (repository variables). Empty → the admin shows a setup notice.

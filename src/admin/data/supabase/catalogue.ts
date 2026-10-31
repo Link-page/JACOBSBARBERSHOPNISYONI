@@ -1,42 +1,42 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
+
 import type { AdminApi } from '../admin-api'
-import { supabase, unwrap } from './client'
+import { changedRows, unwrap } from './client'
 import { toBarber, toService, type BarberRow, type ServiceRow } from './mappers'
 
 const barberColumns =
   'id, name, bio, photo_path, active, sort_order, user_id, barber_services(service_id, duration_minutes), working_hours(weekday, start_time, end_time), breaks(weekday, start_time, end_time)'
 
-export const barbers: AdminApi['barbers'] = {
+export const createBarbers = (db: SupabaseClient): AdminApi['barbers'] => ({
   async list() {
-    const rows = unwrap(await supabase().from('barbers').select(barberColumns).order('sort_order').returns<BarberRow[]>())
+    const rows = unwrap(await db.from('barbers').select(barberColumns).order('sort_order').returns<BarberRow[]>())
     return rows.map(toBarber)
   },
 
   async save(barber) {
     const fields = { name: barber.name, bio: barber.bio, photo_path: barber.photoUrl, active: barber.active, sort_order: barber.sortOrder }
-    const { id } = unwrap(
-      barber.id
-        ? await supabase().from('barbers').update(fields).eq('id', barber.id).select('id').single<{ id: string }>()
-        : await supabase().from('barbers').insert(fields).select('id').single<{ id: string }>(),
-    )
+    const [{ id }] = barber.id
+      ? changedRows(await db.from('barbers').update(fields).eq('id', barber.id).select('id'))
+      : [unwrap(await db.from('barbers').insert(fields).select('id').single<{ id: string }>())]
     unwrap(
-      await supabase().rpc('admin_save_barber_schedule', {
+      await db.rpc('admin_save_barber_schedule', {
         p_barber: id,
         p_services: barber.services.map((s) => ({ service_id: s.serviceId, duration_minutes: s.durationMinutes })),
         p_hours: barber.hours,
         p_breaks: barber.breaks,
       }),
     )
-    return toBarber(unwrap(await supabase().from('barbers').select(barberColumns).eq('id', id).single<BarberRow>()))
+    return toBarber(unwrap(await db.from('barbers').select(barberColumns).eq('id', id).single<BarberRow>()))
   },
 
   async setAccountRole(email, role, barberId) {
-    unwrap(await supabase().rpc('admin_set_user_role', { p_email: email, p_role: role, p_barber: barberId }))
+    unwrap(await db.rpc('admin_set_user_role', { p_email: email, p_role: role, p_barber: barberId }))
   },
-}
+})
 
-export const services: AdminApi['services'] = {
+export const createServices = (db: SupabaseClient): AdminApi['services'] => ({
   async list() {
-    const rows = unwrap(await supabase().from('services').select('*').order('sort_order').returns<ServiceRow[]>())
+    const rows = unwrap(await db.from('services').select('*').order('sort_order').returns<ServiceRow[]>())
     return rows.map(toService)
   },
 
@@ -48,16 +48,14 @@ export const services: AdminApi['services'] = {
       price: service.price,
       active: service.active,
     }
-    const row = unwrap(
-      service.id
-        ? await supabase().from('services').update(fields).eq('id', service.id).select('*').single<ServiceRow>()
-        : await supabase().from('services').insert({ ...fields, sort_order: 999 }).select('*').single<ServiceRow>(),
-    )
-    unwrap(await supabase().rpc('admin_set_service_barbers', { p_service: row.id, p_barbers: barberIds }))
+    const [row] = service.id
+      ? changedRows(await db.from('services').update(fields).eq('id', service.id).select('*').returns<ServiceRow[]>())
+      : [unwrap(await db.from('services').insert({ ...fields, sort_order: 999 }).select('*').single<ServiceRow>())]
+    unwrap(await db.rpc('admin_set_service_barbers', { p_service: row.id, p_barbers: barberIds }))
     return toService(row)
   },
 
   async reorder(ids) {
-    unwrap(await supabase().rpc('reorder_services', { p_ids: ids }))
+    unwrap(await db.rpc('reorder_services', { p_ids: ids }))
   },
-}
+})

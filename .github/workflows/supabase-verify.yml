@@ -1,0 +1,65 @@
+# Verifies the Supabase integration on development branches (never deploys).
+#  - local-stack: the real admin data layer against a disposable local Supabase
+#    (Auth, PostgREST, RLS, Storage) built from supabase/migrations + seed.sql.
+#  - hosted: read-only, anonymous checks against the hosted project using the
+#    repository variables. Writes nothing.
+name: Supabase verification
+
+on:
+  push:
+    branches-ignore: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  local-stack:
+    name: Integration tests (local Supabase stack)
+    runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Jerusalem
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Start Supabase (applies migrations and seed)
+        run: npx --yes supabase@2.122.0 start -x realtime,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+      - name: Pass the local stack's endpoint and development keys to the tests
+        run: |
+          npx --yes supabase@2.122.0 status -o env \
+            | grep -E '^(API_URL|ANON_KEY|PUBLISHABLE_KEY|SERVICE_ROLE_KEY|SECRET_KEY)=' \
+            | sed -e 's/^/STACK_/' -e 's/"//g' >> "$GITHUB_ENV"
+      - run: npm run test:stack
+      - name: Stop Supabase
+        if: always()
+        run: npx --yes supabase@2.122.0 stop --no-backup
+
+  hosted:
+    name: Hosted project (read-only)
+    runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Jerusalem
+      # Public values by design (they ship in the website's JavaScript).
+      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Validate the repository variables (values are not printed)
+        run: node scripts/check-supabase-env.ts --require
+      - run: npm run build
+      - name: Verify the build compiled in both variables and no secret key
+        run: node scripts/check-admin-bundle.ts
+      - run: npm run test:hosted

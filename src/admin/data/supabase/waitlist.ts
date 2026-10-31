@@ -1,14 +1,16 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
+
 import type { AdminApi } from '../admin-api'
 import type { OutboxMessage } from '../types'
-import { supabase, unwrap } from './client'
+import { unwrap } from './client'
 import { toWaitlistEntry, type WaitlistRow } from './mappers'
 
 const withCustomer = '*, customer:customers(full_name, phone)'
 
-export const waitlist: AdminApi['waitlist'] = {
+export const createWaitlist = (db: SupabaseClient): AdminApi['waitlist'] => ({
   async list({ from, to }) {
     const rows = unwrap(
-      await supabase()
+      await db
         .from('waitlist_entries')
         .select(withCustomer)
         .gte('wanted_date', from)
@@ -23,7 +25,7 @@ export const waitlist: AdminApi['waitlist'] = {
 
   async offer(entryId, startsAt, barberId) {
     const row = unwrap(
-      await supabase()
+      await db
         .rpc('staff_offer_waitlist_slot', { p_entry: entryId, p_starts_at: startsAt, p_barber: barberId })
         .single<WaitlistRow>(),
     )
@@ -31,16 +33,16 @@ export const waitlist: AdminApi['waitlist'] = {
   },
 
   async remove(entryId) {
-    unwrap(await supabase().rpc('remove_waitlist_entry', { p_entry: entryId }))
+    unwrap(await db.rpc('remove_waitlist_entry', { p_entry: entryId }))
   },
 
   async runMaintenance() {
-    return unwrap(await supabase().rpc('run_waitlist_maintenance')) as number
+    return unwrap(await db.rpc('run_waitlist_maintenance')) as number
   },
 
   async outbox() {
     const rows = unwrap(
-      await supabase()
+      await db
         .from('notifications')
         .select('id, waitlist_entry_id, channel, status, message, created_at')
         .order('created_at', { ascending: false })
@@ -58,4 +60,4 @@ export const waitlist: AdminApi['waitlist'] = {
       createdAt: r.created_at,
     }))
   },
-}
+})

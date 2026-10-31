@@ -83,13 +83,17 @@ export function NotStaffScreen({ email, onSignOut }: { email: string; onSignOut:
   )
 }
 
-/** Production build without a configured backend: no data, no fake login. */
-export function SetupRequiredScreen() {
+const setupMessages = {
+  missing: 'ממשק הניהול דורש שרת מאובטח (Supabase). עד שיוגדר, אין כאן נתונים ואין אפשרות כניסה. הוראות ההגדרה נמצאות בקובץ docs/admin.md במאגר.',
+  unsafe: 'הוגדר מפתח סודי של Supabase. מפתח כזה לא יכול להיות בקוד הדפדפן ולכן המערכת לא תשתמש בו. החליפו אותו במפתח ה־publishable ובטלו את המפתח הסודי ב־Supabase.',
+  invalid: 'הגדרות Supabase אינן תקינות (כתובת הפרויקט או המפתח). בדקו את משתני הבנייה.',
+}
+
+/** Shown instead of the admin when the backend isn't usable: no data, no fake login. */
+export function SetupRequiredScreen({ reason = 'missing' }: { reason?: keyof typeof setupMessages }) {
   return (
-    <AuthFrame icon={ServerCog} title="מערכת הניהול עוד לא חוברה">
-      <p className="text-center text-subhead text-muted-foreground">
-        ממשק הניהול דורש שרת מאובטח (Supabase). עד שיוגדר, אין כאן נתונים ואין אפשרות כניסה. הוראות ההגדרה נמצאות בקובץ docs/admin.md במאגר.
-      </p>
+    <AuthFrame icon={ServerCog} title={reason === 'missing' ? 'מערכת הניהול עוד לא חוברה' : 'הגדרות השרת דורשות תיקון'}>
+      <p className="text-center text-subhead text-muted-foreground">{setupMessages[reason]}</p>
     </AuthFrame>
   )
 }
