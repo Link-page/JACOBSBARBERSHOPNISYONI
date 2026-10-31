@@ -1,7 +1,7 @@
 import path from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 
 /** Served from https://link-page.github.io/JACOBSBARBERSHOPNISYONI/ (GitHub Pages project site). */
 const base = '/JACOBSBARBERSHOPNISYONI/'
@@ -12,6 +12,11 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   build: {
     rolldownOptions: {
+      // Two pages: the customer app and the staff admin (/admin/), bundled separately.
+      input: {
+        main: path.resolve(import.meta.dirname, 'index.html'),
+        admin: path.resolve(import.meta.dirname, 'admin/index.html'),
+      },
       output: {
         // Long-lived vendor chunks: app updates don't invalidate the framework cache.
         advancedChunks: {
@@ -22,6 +27,9 @@ export default defineConfig({
         },
       },
     },
+  },
+  test: {
+    include: ['src/**/*.test.ts'],
   },
   resolve: {
     alias: {

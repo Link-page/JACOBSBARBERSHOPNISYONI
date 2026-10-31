@@ -19,6 +19,15 @@ npm run build     # type-check + production build to dist/
 npm run lint      # oxlint
 ```
 
+## Admin (staff)
+
+A staff management system lives at **`/admin/`**: dashboard, calendar (day, week, month), appointments, waiting lists, team, services, customers and settings, for desktop and iPhone. It needs a Supabase backend; until one is configured, production shows a setup notice, and `npm run dev` runs a clearly labelled in-memory prototype. Architecture, security model and the exact setup steps are in **[docs/admin.md](docs/admin.md)**.
+
+```bash
+npm test          # unit tests
+npm run test:db   # database tests (disposable Postgres 16)
+```
+
 ## Deployment
 
 **Live site:** https://link-page.github.io/JACOBSBARBERSHOPNISYONI/

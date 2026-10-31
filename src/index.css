@@ -39,6 +39,9 @@
   --brass-strong: #82612d;
   --brass-soft: rgb(156 118 59 / 0.13);
 
+  /* Chart bars: brass tuned to pass the data-visualisation checks on each surface. */
+  --chart-bar: #a8772a;
+
   /* Ink surfaces: the appointment card and loyalty card. */
   --ink-from: #24231f;
   --ink-to: #0f0f0e;
@@ -93,6 +96,8 @@
   --brass-strong: #d9b97f;
   --brass-soft: rgb(201 166 107 / 0.16);
 
+  --chart-bar: #b8862f;
+
   --ink-from: #26251f;
   --ink-to: #141412;
   --ink-edge: rgb(255 255 255 / 0.08);
@@ -141,6 +146,7 @@
   --color-brass-strong: var(--brass-strong);
   --color-brass-soft: var(--brass-soft);
   --color-ink-foreground: var(--ink-foreground);
+  --color-chart-bar: var(--chart-bar);
 
   --radius-sm: calc(var(--radius) - 8px);
   --radius-md: calc(var(--radius) - 4px);
@@ -361,6 +367,25 @@
   100% {
     transform: scale(2.4);
     opacity: 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.97);
   }
 }
 
