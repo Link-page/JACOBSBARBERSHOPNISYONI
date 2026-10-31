@@ -1,8 +1,8 @@
 /**
  * After `npm run build` with the Supabase variables set: proves the build read
- * both variables (shared by the customer app and the admin) and that no secret
- * key of either format was compiled in. Prints file names and yes/no results
- * only — never the values.
+ * both variables (shared by the customer app and the admin), the VAPID public
+ * key when set, and that no secret key of either format was compiled in.
+ * Prints file names and yes/no results only — never the values.
  */
 import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
@@ -31,4 +31,9 @@ const report = (label: string, pass: boolean, detail = '') => {
 report('project URL compiled in', withUrl.length > 0, withUrl.join(', '))
 report('publishable key compiled in', withKey.length > 0, withKey.join(', '))
 report('no secret or service-role key in any bundle', withSecret.length === 0)
+const vapid = process.env.VITE_VAPID_PUBLIC_KEY?.trim() ?? ''
+if (vapid) {
+  const withVapid = files.filter((f) => read(f).includes(vapid))
+  report('VAPID public key compiled in', withVapid.length > 0, withVapid.join(', '))
+}
 process.exit(ok ? 0 : 1)

@@ -1,4 +1,4 @@
-import { vapidKeyBytes } from './push-support'
+import { vapidKeyBytes } from './vapid-key'
 import type { DeviceSubscription } from './types'
 
 const scope = import.meta.env.BASE_URL

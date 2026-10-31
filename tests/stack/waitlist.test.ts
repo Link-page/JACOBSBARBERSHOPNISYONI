@@ -5,7 +5,7 @@ import { at, createAccount, createOwner, expectAdminError, JACOB, SERVICE, signI
 describe.skipIf(!stackAvailable)('waiting list (real Supabase): everyone is notified, the first booking wins', () => {
   it('notifies every waiting customer, holds nothing, and lets exactly one win the race', async () => {
     const owner = await signIn(await createOwner())
-    const day = sunday(2)
+    const day = sunday(6)
 
     // Leave only 10:00–10:45 open for Jacob, then book it: the day is full.
     await owner.api.schedule.addBlock({ barberId: JACOB, startsAt: at(day, '07:00'), endsAt: at(day, '10:00'), reason: '' })
@@ -26,7 +26,7 @@ describe.skipIf(!stackAvailable)('waiting list (real Supabase): everyone is noti
     expect((await join(late, 'שני בתור')).error).toBeNull()
     const entryId: string = first.data.entry.id
 
-    const range = { from: day, to: sunday(3) }
+    const range = { from: day, to: sunday(7) }
     expect((await owner.api.waitlist.list(range)).map((e) => e.customerName)).toEqual(['ראשון בתור', 'שני בתור'])
     expect((await late.db.rpc('remove_waitlist_entry', { p_entry: entryId })).error?.message).toContain('forbidden')
 
