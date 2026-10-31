@@ -12,12 +12,22 @@ npm install
 npm run dev
 ```
 
-To try it on your phone, run `npm run dev -- --host` and open the network URL on the same Wi-Fi. In Safari, **Share → Add to Home Screen** installs it full-screen with its own icon.
+The app is served under `/JACOBSBARBERSHOPNISYONI/` (the GitHub Pages path) in development too, so open the URL Vite prints, e.g. `http://localhost:5173/JACOBSBARBERSHOPNISYONI/`. To try it on your phone, run `npm run dev -- --host` and open the network URL on the same Wi-Fi. In Safari, **Share → Add to Home Screen** installs it full-screen with its own icon.
 
 ```bash
 npm run build     # type-check + production build to dist/
 npm run lint      # oxlint
 ```
+
+## Deployment
+
+**Live site:** https://link-page.github.io/JACOBSBARBERSHOPNISYONI/
+
+- **Production branch: `main`.** Every push to `main` runs `.github/workflows/deploy.yml`.
+- **What the workflow does:** installs dependencies, lints, builds, and publishes `dist/` to GitHub Pages. A failed build never replaces the live site.
+- **Re-deploy without a code change:** Actions → *Deploy to GitHub Pages* → *Run workflow*.
+- **Base path:** set once in `vite.config.ts` (`base`). Files in `public/` must be referenced through `publicUrl()` (`src/lib/public-url.ts`) so they resolve under that path.
+- **Required repository setting:** Settings → Pages → *Build and deployment* → Source: **GitHub Actions**.
 
 ## What's inside
 
@@ -88,5 +98,5 @@ Motion is used for spring selection indicators (calendar day, time row, tabs), d
 ## Before launch
 
 - **Replace the sample content** in `src/data/shop.ts`: address, phone, WhatsApp, Instagram, hours, prices, team and the customer profile are placeholders.
-- **Add real photos**: put images in `public/` and set `image` on a look or `photo` on a barber.
+- **Add real photos**: put images in `public/` and set `image` on a look or `photo` on a barber, as a path inside `public/` without a leading slash (e.g. `image: 'lookbook/skin-fade.jpg'`).
 - **Connect the booking backend** (see above). Cancelling an appointment currently updates the device only and doesn't go through `src/api` yet.

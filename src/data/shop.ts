@@ -21,7 +21,7 @@ export type Barber = {
   initial: string
   role: string
   specialties: string[]
-  /** Optional portrait, e.g. "/barbers/jacob.jpg" in /public. */
+  /** Optional portrait, a path inside /public, e.g. "barbers/jacob.jpg". */
   photo?: string
 }
 
@@ -39,7 +39,7 @@ export type Look = {
   tone: LookTone
   /** Height / width, used for the masonry grid. */
   ratio: number
-  /** Optional photo, e.g. "/lookbook/skin-fade.jpg" in /public. */
+  /** Optional photo, a path inside /public, e.g. "lookbook/skin-fade.jpg". */
   image?: string
 }
 

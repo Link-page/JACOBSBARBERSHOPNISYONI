@@ -1,6 +1,7 @@
 import { memo, type ReactNode } from 'react'
 
 import type { Look, LookPattern } from '@/data/shop'
+import { publicUrl } from '@/lib/public-url'
 import { tones } from '@/lib/tones'
 import { cn } from '@/lib/utils'
 
@@ -64,7 +65,7 @@ export const LookArtwork = memo(function LookArtwork({ look, className }: LookAr
   if (look.image) {
     return (
       <img
-        src={look.image}
+        src={publicUrl(look.image)}
         alt=""
         loading="lazy"
         decoding="async"
