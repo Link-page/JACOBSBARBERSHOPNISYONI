@@ -37,56 +37,51 @@ describe('waiting list', () => {
     })
   })
 
-  it('offers a freed slot to the longest-waiting customer and holds it for them', async () => {
+  it('notifies every eligible waiting customer when time frees up, and holds nothing', async () => {
     await isolated(async (db) => {
       const day = await nextWorkingSunday(db)
       const owner = await createOwner(db)
       const { first, appointmentId } = await fillDay(db, day)
-      const [early, late, outsider] = [await createUser(db), await createUser(db), await createUser(db)]
-      const e1 = await queryAs(db, early, join, [SERVICE.signature, day, null, 'ראשון בתור', null])
-      await db.query(`update public.waitlist_entries set created_at = now() - interval '1 hour' where id = $1`, [e1.rows[0].result.entry.id])
-      await queryAs(db, late, join, [SERVICE.signature, day, null, 'שני בתור', null])
+      const [early, late, tooLong] = [await createUser(db), await createUser(db), await createUser(db)]
+      await queryAs(db, early, join, [SERVICE.signature, day, null, 'ממתין ראשון', null])
+      await queryAs(db, late, join, [SERVICE.signature, day, null, 'ממתין שני', null])
+      // 70 minutes can't fit in the 45 that will free up: not eligible.
+      await queryAs(db, tooLong, join, [SERVICE.cutBeard, day, null, 'טיפול ארוך', null])
+      await db.query(`insert into public.push_subscriptions (profile_id, endpoint, p256dh, auth) values ($1, 'https://push.test/early', repeat('k', 60), repeat('a', 16))`, [early.id])
 
       await queryAs(db, first, `select * from public.cancel_appointment($1)`, [appointmentId])
 
-      const entries = await queryAs(db, owner, `select customer_id, status, offered_starts_at from public.waitlist_entries order by created_at`)
-      expect(entries.rows.map((r) => r.status)).toEqual(['offered', 'waiting'])
-      const pending = await queryAs(db, owner, `select status, message from public.notifications`)
-      expect(pending.rows).toHaveLength(1)
-      expect(pending.rows[0].status).toBe('pending') // nothing is sent without a provider
+      const notified = await db.query(`select profile_id from public.inbox_messages where category = 'waitlist_available' order by profile_id`)
+      expect(notified.rows.map((r) => r.profile_id).sort()).toEqual([early.id, late.id].sort())
+      expect((await db.query(`select count(*)::int as n from public.push_deliveries`)).rows[0].n).toBe(1)
+      // Nothing is held: everyone still waits, and the time is open to anyone.
+      const statuses = await queryAs(db, owner, `select distinct status from public.waitlist_entries`)
+      expect(statuses.rows.map((r) => r.status)).toEqual(['waiting'])
+      expect(await slotTimes(db, SERVICE.signature, day)).toContain('10:00')
 
-      // The held slot is hidden from everyone else.
-      expect(await slotTimes(db, SERVICE.signature, day)).not.toContain('10:00')
-      expect(await errorOf(queryAs(db, outsider, book, [SERVICE.signature, await at(db, day, '10:00'), null, 'זר', null]))).toBe(
-        'slot_unavailable',
-      )
+      // Announcing the same freed time again notifies nobody twice.
+      const again = await db.query(`select app.announce_freed_time($1, $2, $3, $4) as n`, [appointmentId, JACOB, await at(db, day, '10:00'), await at(db, day, '10:45')])
+      expect(again.rows[0].n).toBe(0)
+      expect((await db.query(`select count(*)::int as n from public.inbox_messages where category = 'waitlist_available'`)).rows[0].n).toBe(2)
 
-      const claimed = await queryAs(db, early, `select * from public.claim_waitlist_offer($1)`, [e1.rows[0].result.entry.id])
-      expect(claimed.rows[0].status).toBe('booked')
-      expect(await errorOf(queryAs(db, early, `select * from public.claim_waitlist_offer($1)`, [e1.rows[0].result.entry.id]))).toBe(
-        'offer_expired',
-      )
+      // The first to book wins; the other is told the time is taken.
+      const start = await at(db, day, '10:00')
+      await queryAs(db, late, book, [SERVICE.signature, start, null, null, null])
+      expect(await errorOf(queryAs(db, early, book, [SERVICE.signature, start, null, null, null]))).toBe('slot_unavailable')
+      const lateEntry = await db.query(`select w.status from public.waitlist_entries w join public.customers c on c.id = w.customer_id where c.profile_id = $1`, [late.id])
+      expect(lateEntry.rows[0].status).toBe('booked') // booking the day they waited for takes them off the list
     })
   })
 
-  it('passes an expired offer to the next customer', async () => {
+  it('retires exclusive offers and holds', async () => {
     await isolated(async (db) => {
       const day = await nextWorkingSunday(db)
       const owner = await createOwner(db)
-      const { first, appointmentId } = await fillDay(db, day)
-      const [a, b] = [await createUser(db), await createUser(db)]
-      const ea = await queryAs(db, a, join, [SERVICE.signature, day, null, 'א', null])
-      await db.query(`update public.waitlist_entries set created_at = now() - interval '1 hour' where id = $1`, [ea.rows[0].result.entry.id])
-      const eb = await queryAs(db, b, join, [SERVICE.signature, day, null, 'ב', null])
-      await queryAs(db, first, `select * from public.cancel_appointment($1)`, [appointmentId])
-
-      await db.query(`update public.waitlist_entries set offer_expires_at = now() - interval '1 minute' where id = $1`, [ea.rows[0].result.entry.id])
-      const expired = await queryAs(db, owner, `select public.run_waitlist_maintenance() as n`)
-      expect(expired.rows[0].n).toBe(1)
-      const statuses = await queryAs(db, owner, `select id, status from public.waitlist_entries`)
-      const byId = new Map(statuses.rows.map((r) => [r.id, r.status]))
-      expect(byId.get(ea.rows[0].result.entry.id)).toBe('expired')
-      expect(byId.get(eb.rows[0].result.entry.id)).toBe('offered')
+      await fillDay(db, day)
+      const waiting = await createUser(db)
+      const entry = (await queryAs(db, waiting, join, [SERVICE.signature, day, null, 'ממתין', null])).rows[0].result.entry.id
+      expect(await errorOf(queryAs(db, waiting, `select public.claim_waitlist_offer($1)`, [entry]))).toBe('offers_retired')
+      expect(await errorOf(queryAs(db, owner, `select public.staff_offer_waitlist_slot($1, $2::timestamptz, $3)`, [entry, await at(db, day, '10:00'), JACOB]))).toBe('offers_retired')
     })
   })
 
