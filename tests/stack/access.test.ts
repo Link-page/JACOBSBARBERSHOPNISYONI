@@ -39,6 +39,7 @@ describe.skipIf(!stackAvailable)('access control (real Supabase Auth + RLS, thro
       name: 'נועם',
       bio: '',
       photoUrl: null,
+      whatsapp: '',
       active: true,
       sortOrder: 1,
       services: [{ serviceId: SERVICE.signature, durationMinutes: null }],
@@ -64,7 +65,7 @@ describe.skipIf(!stackAvailable)('access control (real Supabase Auth + RLS, thro
     await expectAdminError(noam.api.appointments.history(jacobs.id), 'forbidden')
     await expectAdminError(noam.api.settings.save(await noam.api.settings.get()), 'forbidden')
     await expectAdminError(noam.api.services.reorder([SERVICE.signature]), 'forbidden')
-    expect(await noam.api.waitlist.outbox()).toEqual([])
+    expect((await noam.db.from('inbox_messages').select('id')).data).toEqual([]) // customers' notifications are private
 
     const [own] = await noam.api.schedule.daySlots(SERVICE.signature, day, noamChair.id)
     const mine = await noam.api.appointments.create({ customerId: customer.id, barberId: noamChair.id, serviceId: SERVICE.signature, startsAt: own.startsAt, notes: '' })

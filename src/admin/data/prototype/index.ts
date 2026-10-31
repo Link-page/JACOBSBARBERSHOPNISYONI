@@ -4,7 +4,7 @@ import { newId } from '@/lib/id'
 
 import type { AdminApi } from '../admin-api'
 import { AdminError } from '../errors'
-import type { Appointment, HistoryEvent, OutboxMessage, StaffSession, TimeBlock } from '../types'
+import type { Appointment, BroadcastRecord, HistoryEvent, StaffSession, TimeBlock } from '../types'
 import { canManageBarber, isOwner } from '../../lib/permissions'
 import * as seed from './seed'
 
@@ -17,8 +17,8 @@ import * as seed from './seed'
 type Role = 'owner' | 'barber'
 
 const sessions: Record<Role, StaffSession> = {
-  owner: { userId: 'proto-owner', email: 'owner@prototype.local', name: 'יעקב', role: 'owner', barberId: seed.JACOB },
-  barber: { userId: 'proto-barber', email: 'barber@prototype.local', name: 'נועם', role: 'barber', barberId: seed.NOAM },
+  owner: { userId: 'proto-owner', email: 'owner@prototype.local', name: 'יעקב', role: 'owner', barberId: seed.JACOB, canBroadcast: true },
+  barber: { userId: 'proto-barber', email: 'barber@prototype.local', name: 'נועם', role: 'barber', barberId: seed.NOAM, canBroadcast: false },
 }
 
 export function createPrototypeApi() {
@@ -37,7 +37,7 @@ export function createPrototypeApi() {
     appointments: seed.seedAppointments(now(), barbers, services, customers),
     blocks: seed.seedBlocks(now()),
     waitlist: seed.seedWaitlist(now(), customers, services),
-    outbox: [] as OutboxMessage[],
+    broadcasts: [] as (BroadcastRecord & { key: string })[],
     history: [] as (HistoryEvent & { entityId: string })[],
     gallery: [] as { id: string; title: string; category: string; imageUrl: string; active: boolean; sortOrder: number }[],
   }
@@ -93,31 +93,15 @@ export function createPrototypeApi() {
       price: a.price,
       status: a.status,
       notes: a.notes,
+      confirmationStatus: a.confirmationStatus,
+      // The day before at 20:00, as the database plans it.
+      confirmationDeadline: a.confirmationStatus === 'pending' ? new Date(new Date(a.start).setHours(20, 0, 0, 0) - 86_400_000).toISOString() : null,
+      confirmedAt: a.confirmedAt?.toISOString() ?? null,
+      confirmedBy: a.confirmedAt ? 'customer' : null,
+      cancellationReason: a.status === 'cancelled' ? 'staff' : null,
     }
   }
   const findAppointment = (id: string) => state.appointments.find((a) => a.id === id) ?? fail('not_found')
-
-  /** Same allocation policy as the database: oldest waiting request gets the earliest fitting slot. */
-  const offerFreedTime = (barberId: string, date: string) => {
-    for (const entry of state.waitlist.filter((w) => w.date === date && w.status === 'waiting' && (!w.barberId || w.barberId === barberId))) {
-      const [slot] = daySlots(schedule(), entry.serviceId, date, now(), entry.barberId)
-      if (!slot) continue
-      Object.assign(entry, {
-        status: 'offered',
-        offeredStartsAt: slot.startsAt.toISOString(),
-        offeredBarberId: slot.barberIds[0],
-        offerExpiresAt: new Date(now().getTime() + state.settings.waitlistOfferMinutes * 60_000).toISOString(),
-      })
-      state.outbox.unshift({
-        id: newId(),
-        waitlistEntryId: entry.id,
-        channel: 'sms',
-        status: 'pending',
-        message: `התפנה תור ב-${slot.startsAt.toLocaleDateString('he-IL')} בשעה ${slot.startsAt.toTimeString().slice(0, 5)}.`,
-        createdAt: now().toISOString(),
-      })
-    }
-  }
 
   const visibleCustomerIds = () => {
     const s = staff()
@@ -169,6 +153,9 @@ export function createPrototypeApi() {
           price: state.services.find((s) => s.id === input.serviceId)!.price,
           status: 'booked',
           notes: input.notes,
+          // Staff bookings in the prototype are walk-ins: no app to confirm in.
+          confirmationStatus: 'not_required',
+          confirmedAt: null,
         }
         state.appointments.push(row)
         record(row.id, 'insert')
@@ -199,10 +186,8 @@ export function createPrototypeApi() {
         const start = new Date(startsAt)
         const end = new Date(start.getTime() + duration * 60_000)
         if (!isBookable(schedule(), target, start, end, { appointmentId: id })) fail('slot_unavailable')
-        const [oldBarber, oldDate] = [a.barberId, dayKey(a.start)]
         Object.assign(a, { barberId: target, start, end })
         record(id, 'update', { starts_at: startsAt })
-        offerFreedTime(oldBarber, oldDate)
         return settle(toAppointment(a))
       },
 
@@ -213,7 +198,6 @@ export function createPrototypeApi() {
         a.status = 'cancelled'
         if (reason.trim()) a.notes = `${a.notes}\nביטול: ${reason.trim()}`.trim()
         record(id, 'update', { status: 'cancelled' })
-        offerFreedTime(a.barberId, dayKey(a.start))
         return settle(toAppointment(a))
       },
 
@@ -224,6 +208,15 @@ export function createPrototypeApi() {
         a.status = status
         record(id, 'update', { status })
         return settle(toAppointment(a))
+      },
+
+      async confirm(id) {
+        const a = findAppointment(id)
+        requireBarber(a.barberId)
+        if (a.status !== 'booked') fail('invalid_status')
+        Object.assign(a, { confirmationStatus: 'confirmed', confirmedAt: now() })
+        record(id, 'update', { confirmation_status: 'confirmed' })
+        return settle({ ...toAppointment(a), confirmedBy: 'staff' })
       },
 
       async history(id) {
@@ -267,41 +260,18 @@ export function createPrototypeApi() {
         settle(
           state.waitlist.filter(
             (w) =>
-              w.date >= from && w.date < to && (w.status === 'waiting' || w.status === 'offered') &&
+              w.date >= from && w.date < to && w.status === 'waiting' &&
               (isOwner(staff()) || w.barberId === null || w.barberId === staff().barberId),
           ),
         ),
-      async offer(entryId, startsAt, barberId) {
-        requireBarber(barberId)
-        const entry = state.waitlist.find((w) => w.id === entryId) ?? fail('not_found')
-        const duration = durationOf(barberId, entry.serviceId) ?? fail('service_not_offered')
-        const start = new Date(startsAt)
-        if (!isBookable(schedule(), barberId, start, new Date(start.getTime() + duration * 60_000), { entryId })) fail('slot_unavailable')
-        Object.assign(entry, {
-          status: 'offered',
-          offeredStartsAt: startsAt,
-          offeredBarberId: barberId,
-          offerExpiresAt: new Date(now().getTime() + state.settings.waitlistOfferMinutes * 60_000).toISOString(),
-        })
-        state.outbox.unshift({ id: newId(), waitlistEntryId: entryId, channel: 'sms', status: 'pending', message: `הוצע תור ל${entry.customerName}.`, createdAt: now().toISOString() })
-        return settle(entry)
-      },
       async remove(entryId) {
         const entry = state.waitlist.find((w) => w.id === entryId) ?? fail('not_found')
         if (!isOwner(staff()) && (entry.barberId ?? entry.offeredBarberId) !== staff().barberId) fail('forbidden')
         entry.status = 'removed'
         return settle(undefined)
       },
-      async runMaintenance() {
-        const expired = state.waitlist.filter((w) => w.status === 'offered' && w.offerExpiresAt && new Date(w.offerExpiresAt) <= now())
-        expired.forEach((w) => (w.status = 'expired'))
-        expired.forEach((w) => offerFreedTime(w.offeredBarberId!, w.date))
-        return settle(expired.length)
-      },
-      outbox: async () => {
-        requireOwner()
-        return settle(state.outbox)
-      },
+      // The prototype has no clock-driven jobs or push; the real scheduler runs in the database.
+      runMaintenance: async () => settle(0),
     },
 
     barbers: {
@@ -310,7 +280,7 @@ export function createPrototypeApi() {
         requireOwner()
         const existing = barber.id ? state.barbers.find((b) => b.id === barber.id) : undefined
         for (const h of [...barber.hours, ...barber.breaks]) if (h.end <= h.start) fail('invalid_status')
-        const saved = { ...existing, ...barber, id: existing?.id ?? newId(), linkedUserId: existing?.linkedUserId ?? null }
+        const saved = { ...existing, ...barber, id: existing?.id ?? newId(), linkedUserId: existing?.linkedUserId ?? null, linkedCanBroadcast: existing?.linkedCanBroadcast ?? false }
         state.barbers = existing ? state.barbers.map((b) => (b.id === saved.id ? saved : b)) : [...state.barbers, saved]
         return settle(saved)
       },
@@ -318,6 +288,11 @@ export function createPrototypeApi() {
         requireOwner()
         // Accounts exist only in the real backend.
         fail('user_not_found')
+      },
+      async setBroadcastPermission(userId, allowed) {
+        requireOwner()
+        state.barbers.filter((b) => b.linkedUserId === userId).forEach((b) => (b.linkedCanBroadcast = allowed))
+        return settle(undefined)
       },
     },
 
@@ -386,6 +361,26 @@ export function createPrototypeApi() {
       async addNote(customerId, body) {
         state.notes.unshift({ id: newId(), customerId, body, createdAt: now().toISOString() })
         return settle(undefined)
+      },
+    },
+
+    notifications: {
+      async send({ title, body, audience, link, idempotencyKey }) {
+        if (!staff().canBroadcast) fail('forbidden')
+        const existing = state.broadcasts.find((b) => b.key === idempotencyKey)
+        if (existing) return settle({ id: existing.id, recipients: existing.recipients, duplicate: true })
+        if (!title.trim() || title.length > 60 || !body.trim() || body.length > 240 || (link && !link.startsWith('?'))) fail('invalid_broadcast')
+        if (state.broadcasts.some((b) => now().getTime() - new Date(b.createdAt).getTime() < 120_000)) fail('broadcast_too_soon')
+        const record: BroadcastRecord & { key: string } = {
+          id: newId(), key: idempotencyKey, title: title.trim(), body: body.trim(), audience, createdAt: now().toISOString(),
+          senderName: staff().name, recipients: audience === 'upcoming' ? 6 : 14, pushAccepted: 0, pushFailed: 0, pushPending: 0,
+        }
+        state.broadcasts.unshift(record)
+        return settle({ id: record.id, recipients: record.recipients, duplicate: false })
+      },
+      history: async () => {
+        if (!staff().canBroadcast) fail('forbidden')
+        return settle(state.broadcasts.filter((b) => isOwner(staff()) || b.senderName === staff().name))
       },
     },
 

@@ -11,6 +11,8 @@ export type StaffSession = {
   role: StaffRole
   /** The barber chair this account works, if any (the owner may also be a barber). */
   barberId: string | null
+  /** May send messages to customers (always true for the owner). */
+  canBroadcast: boolean
 }
 
 export type AuthState =
@@ -31,6 +33,12 @@ export type Appointment = {
   price: number
   status: AppointmentStatus
   notes: string
+  /** Attendance confirmation (0012_attendance.sql). */
+  confirmationStatus: 'pending' | 'confirmed' | 'not_required'
+  confirmationDeadline: string | null
+  confirmedAt: string | null
+  confirmedBy: 'customer' | 'staff' | 'booking' | null
+  cancellationReason: 'customer' | 'staff' | 'no_confirmation' | 'system' | null
 }
 
 export type NewAppointment = { customerId: string; barberId: string; serviceId: string; startsAt: string; notes: string }
@@ -45,6 +53,10 @@ export type Barber = {
   active: boolean
   sortOrder: number
   linkedUserId: string | null
+  /** Whether the linked staff account may send messages to customers. */
+  linkedCanBroadcast: boolean
+  /** WhatsApp in international digits (e.g. 972541234567); '' = the shop's number. */
+  whatsapp: string
   services: { serviceId: string; durationMinutes: number | null }[]
   hours: WeeklyRange[]
   breaks: WeeklyRange[]
@@ -81,15 +93,6 @@ export type WaitlistEntry = {
   createdAt: string
 }
 
-export type OutboxMessage = {
-  id: string
-  waitlistEntryId: string | null
-  channel: 'sms' | 'whatsapp' | 'email'
-  status: 'pending' | 'sent' | 'failed'
-  message: string
-  createdAt: string
-}
-
 export type Slot = { startsAt: string; barberIds: string[] }
 export type DayCapacity = { barberId: string; totalSlots: number; freeSlots: number }
 export type HistoryEvent = { id: string; action: string; actorId: string | null; details: Record<string, unknown>; createdAt: string }
@@ -108,6 +111,12 @@ export type BusinessSettings = {
   bookingWindowDays: number
   cancellationNoticeHours: number
   waitlistOfferMinutes: number
+  /** Attendance confirmation policy (times are HH:MM, the day before, Israel time). */
+  confirmationRequestTime: string
+  confirmationDeadlineTime: string
+  autoCancelUnconfirmed: boolean
+  lateBookingPolicy: 'auto_confirm' | 'exempt'
+  reminderMinutesBefore: number
   bookingPolicy: string
   cancellationPolicy: string
   /** Default theme of the customer app. */
@@ -117,3 +126,31 @@ export type BusinessSettings = {
 export type GalleryItem = { id: string; title: string; category: string; imageUrl: string; active: boolean; sortOrder: number }
 
 export type DateRange = { from: string; to: string }
+
+export type BroadcastAudience = 'opted_in' | 'upcoming'
+
+export type BroadcastInput = {
+  title: string
+  body: string
+  audience: BroadcastAudience
+  /** In-app link ('?go=…'), or null. */
+  link: string | null
+  /** One per draft: a double submit returns the first send. */
+  idempotencyKey: string
+}
+
+export type BroadcastResult = { id: string; recipients: number; duplicate: boolean }
+
+/** A sent message with counts. "Accepted" = taken by a push service, not proof of display. */
+export type BroadcastRecord = {
+  id: string
+  title: string
+  body: string
+  audience: BroadcastAudience
+  createdAt: string
+  senderName: string
+  recipients: number
+  pushAccepted: number
+  pushFailed: number
+  pushPending: number
+}

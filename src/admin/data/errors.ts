@@ -2,6 +2,13 @@
 const messages: Record<string, string> = {
   slot_unavailable: 'השעה כבר לא פנויה. בחרו שעה אחרת.',
   forbidden: 'אין לך הרשאה לפעולה הזו.',
+  confirmed_locked: 'ההגעה אושרה: רק הצוות יכול לבטל או להזיז את התור.',
+  confirmation_closed: 'המועד לאישור הגעה עבר.',
+  offers_retired: 'הצעות אישיות הוחלפו: כשמתפנה זמן, כל הממתינים מקבלים התראה.',
+  invalid_broadcast: 'כותרת עד 60 תווים וטקסט עד 240 תווים.',
+  broadcast_too_soon: 'נשלחה הודעה לפני רגע. אפשר לשלוח שוב בעוד כמה דקות.',
+  broadcast_limit: 'הגעתם למכסת ההודעות היומית.',
+  duplicate_broadcast: 'הודעה זהה כבר נשלחה היום.',
   too_late_to_change: 'עבר המועד לשינוי התור הזה.',
   invalid_status: 'אי אפשר לבצע את הפעולה במצב הנוכחי.',
   service_not_offered: 'הספר לא מבצע את הטיפול הזה.',

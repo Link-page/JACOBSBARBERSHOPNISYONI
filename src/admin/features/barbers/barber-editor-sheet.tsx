@@ -12,15 +12,17 @@ import { useCatalogue } from '../../components/use-catalogue'
 import { useAdminApi } from '../../data/api-context'
 import type { Barber } from '../../data/types'
 import { AccountAccess } from './account-access'
+import { BroadcastPermission } from './broadcast-permission'
 import { BarberServicesEditor } from './barber-services-editor'
 import { BreaksEditor } from './breaks-editor'
 import { WeeklyHoursEditor } from './weekly-hours-editor'
 
-type Draft = Omit<Barber, 'id' | 'linkedUserId'> & { id?: string }
+type Draft = Omit<Barber, 'id' | 'linkedUserId' | 'linkedCanBroadcast'> & { id?: string }
 
 const emptyBarber = (sortOrder: number): Draft => ({
   name: '',
   bio: '',
+  whatsapp: '',
   photoUrl: null,
   active: true,
   sortOrder,
@@ -64,6 +66,9 @@ export function BarberEditorSheet({ barber, onClose }: { barber?: Barber; onClos
         <Field label="שם">{(id) => <Input id={id} value={draft.name} onChange={(e) => set('name', e.target.value)} />}</Field>
         <Field label="תמונה">{() => <ImageField value={draft.photoUrl} folder="barbers" onChange={(url) => set('photoUrl', url)} />}</Field>
         <Field label="ביוגרפיה">{(id) => <Textarea id={id} value={draft.bio} onChange={(e) => set('bio', e.target.value)} />}</Field>
+        <Field label="וואטסאפ לבקשות ביטול" hint="ספרות בלבד, בפורמט בינלאומי (972…). ריק = המספר של המספרה">
+          {(id) => <Input id={id} dir="ltr" inputMode="tel" value={draft.whatsapp} onChange={(e) => set('whatsapp', e.target.value.replace(/\D/g, ''))} />}
+        </Field>
         <ToggleRow label="פעיל" hint="ספר לא פעיל לא מוצג ללקוחות ולא מקבל תורים" checked={draft.active} onChange={(v) => set('active', v)} />
         <Group title="טיפולים">
           <BarberServicesEditor services={services} value={draft.services} onChange={(v) => set('services', v)} />
@@ -77,6 +82,7 @@ export function BarberEditorSheet({ barber, onClose }: { barber?: Barber; onClos
         {barber && (
           <Group title="גישה לניהול">
             <AccountAccess barberId={barber.id} linked={!!barber.linkedUserId} />
+            {barber.linkedUserId && <BroadcastPermission userId={barber.linkedUserId} allowed={barber.linkedCanBroadcast} />}
           </Group>
         )}
         {invalid && draft.name.trim() && <p className="text-footnote text-destructive">שעת הסיום חייבת להיות אחרי שעת ההתחלה.</p>}

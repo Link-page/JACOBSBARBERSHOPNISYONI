@@ -10,6 +10,7 @@ import { spring } from '@/lib/motion'
 import { useStaff } from '../../auth/staff-context'
 import { Field } from '../../components/field'
 import { ResponsiveSheet } from '../../components/responsive-sheet'
+import { AttendanceInfo } from './attendance-info'
 import { StatusBadge } from '../../components/status-badge'
 import { useAction } from '../../components/use-action'
 import { useCatalogue } from '../../components/use-catalogue'
@@ -74,6 +75,7 @@ export function AppointmentSheet({ appointment, onClose }: { appointment: Appoin
                   </div>
                 ))}
               </dl>
+              <AttendanceInfo appointment={appointment} onChanged={() => onClose()} />
 
               {editable && (
                 <>

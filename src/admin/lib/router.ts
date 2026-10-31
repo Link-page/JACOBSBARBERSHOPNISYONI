@@ -5,9 +5,9 @@ import { useSyncExternalStore } from 'react'
  * such as GitHub Pages without server rewrites.
  */
 
-export type RouteId = 'dashboard' | 'calendar' | 'waitlist' | 'customers' | 'barbers' | 'services' | 'settings' | 'more'
+export type RouteId = 'dashboard' | 'calendar' | 'waitlist' | 'customers' | 'notifications' | 'barbers' | 'services' | 'settings' | 'more'
 
-const ids: RouteId[] = ['dashboard', 'calendar', 'waitlist', 'customers', 'barbers', 'services', 'settings', 'more']
+const ids: RouteId[] = ['dashboard', 'calendar', 'waitlist', 'customers', 'notifications', 'barbers', 'services', 'settings', 'more']
 
 function parse(hash: string) {
   const [path = '', query = ''] = hash.replace(/^#\/?/, '').split('?')

@@ -12,17 +12,17 @@ import { PageHeader } from '../../components/page-header'
 import { useAction } from '../../components/use-action'
 import { useAdminApi, useAdminQuery } from '../../data/api-context'
 import type { BusinessSettings } from '../../data/types'
+import { ConfirmationPolicyPanel } from './confirmation-policy-panel'
 import { ClosedDatesPanel } from './closed-dates-panel'
 import { GalleryPanel } from './gallery-panel'
 
-type NumberKey = 'slotStepMinutes' | 'leadTimeMinutes' | 'bookingWindowDays' | 'cancellationNoticeHours' | 'waitlistOfferMinutes'
+type NumberKey = 'slotStepMinutes' | 'leadTimeMinutes' | 'bookingWindowDays' | 'cancellationNoticeHours'
 
 const rules: { key: NumberKey; label: string; hint: string }[] = [
   { key: 'slotStepMinutes', label: 'מרווח בין תורים (דקות)', hint: 'כל כמה דקות מוצעת שעת התחלה' },
   { key: 'leadTimeMinutes', label: 'הזמנה מינימלית מראש (דקות)', hint: 'אי אפשר להזמין תור שמתחיל לפני כן' },
   { key: 'bookingWindowDays', label: 'כמה ימים קדימה אפשר להזמין', hint: '1–365' },
   { key: 'cancellationNoticeHours', label: 'ביטול/שינוי עד (שעות לפני)', hint: 'אחרי זה רק הצוות יכול לשנות' },
-  { key: 'waitlistOfferMinutes', label: 'תוקף הצעה מרשימת המתנה (דקות)', hint: 'אחרי זה התור מוצע לבא בתור' },
 ]
 
 /** Business profile, booking rules, policies and the customer app's appearance. */
@@ -49,7 +49,7 @@ function SettingsForm({ saved }: { saved: BusinessSettings }) {
         title="הגדרות"
         subtitle="נשמר בשרת ומשפיע על כל המכשירים."
         actions={
-          <Button className="h-10" size="sm" disabled={pending || JSON.stringify(draft) === JSON.stringify(saved)} onClick={() => run(() => api.settings.save(draft), 'ההגדרות נשמרו')}>
+          <Button className="h-10" size="sm" disabled={pending || JSON.stringify(draft) === JSON.stringify(saved) || draft.confirmationRequestTime >= draft.confirmationDeadlineTime} onClick={() => run(() => api.settings.save(draft), 'ההגדרות נשמרו')}>
             {pending && <Spinner />}
             שמירת שינויים
           </Button>
@@ -77,6 +77,7 @@ function SettingsForm({ saved }: { saved: BusinessSettings }) {
             ))}
           </div>
         </Panel>
+        <ConfirmationPolicyPanel draft={draft} set={set} />
         <Panel title="מדיניות">
           <div className="flex flex-col gap-3">
             <Field label="מדיניות הזמנה">{(id) => <Textarea id={id} value={draft.bookingPolicy} onChange={(e) => set('bookingPolicy', e.target.value)} />}</Field>

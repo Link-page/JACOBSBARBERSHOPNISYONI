@@ -47,6 +47,7 @@ export const createAppointments = (db: SupabaseClient): AdminApi['appointments']
       call('reschedule_appointment', { p_id: id, p_starts_at: startsAt, p_barber: barberId ?? null }),
     cancel: (id, reason) => call('cancel_appointment', { p_id: id, p_reason: reason }),
     setStatus: (id, status) => call('set_appointment_status', { p_id: id, p_status: status }),
+    confirm: (id) => call('confirm_attendance', { p_id: id }),
 
     async history(id) {
       type Row = {

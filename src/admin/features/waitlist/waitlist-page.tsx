@@ -14,10 +14,7 @@ import { PageHeader } from '../../components/page-header'
 import { useAction } from '../../components/use-action'
 import { useCatalogue } from '../../components/use-catalogue'
 import { useAdminApi, useAdminQuery } from '../../data/api-context'
-import type { WaitlistEntry } from '../../data/types'
-import { isOwner, visibleBarbers } from '../../lib/permissions'
-import { OfferSheet } from './offer-sheet'
-import { OutboxPanel } from './outbox-panel'
+import { visibleBarbers } from '../../lib/permissions'
 import { WaitlistEntryCard } from './waitlist-entry-card'
 
 /** Customers waiting for full days, oldest first within each date. */
@@ -29,7 +26,6 @@ export function WaitlistPage() {
   const { barbers } = useCatalogue()
   const { run, pending } = useAction()
   const [barber, setBarber] = useState('all')
-  const [offering, setOffering] = useState<WaitlistEntry | null>(null)
   const entries = useAdminQuery(`waitlist|${today}`, (a) => a.waitlist.list({ from: today, to: dayKey(addDays(now, 61)) }))
   const chairs = visibleBarbers(staff, barbers).filter((b) => b.active)
 
@@ -41,7 +37,7 @@ export function WaitlistPage() {
       <div>
         <PageHeader
           title="רשימת המתנה"
-          subtitle="לקוחות שביקשו יום מלא. כשמתפנה זמן, הוא מוצע אוטומטית לנרשם הוותיק ביותר."
+          subtitle="לקוחות שביקשו יום מלא. כשמתפנה זמן, כולם מקבלים התראה — מי שקובע ראשון מקבל את התור."
           actions={
             <>
               {chairs.length > 1 && (
@@ -54,9 +50,9 @@ export function WaitlistPage() {
                   ))}
                 </NativeSelect>
               )}
-              <Button size="sm" variant="secondary" className="h-10" disabled={pending} onClick={() => run(() => api.waitlist.runMaintenance(), 'הצעות שפגו הועברו הלאה')}>
+              <Button size="sm" variant="secondary" className="h-10" disabled={pending} onClick={() => run(() => api.waitlist.runMaintenance(), 'התזמונים הורצו')}>
                 <RefreshCw />
-                בדיקת הצעות שפגו
+                הרצת תזמונים עכשיו
               </Button>
             </>
           }
@@ -81,7 +77,6 @@ export function WaitlistPage() {
                       <WaitlistEntryCard
                         key={entry.id}
                         entry={entry}
-                        onOffer={() => setOffering(entry)}
                         onRemove={() => run(() => api.waitlist.remove(entry.id), 'הוסר מהרשימה')}
                       />
                     ))}
@@ -92,8 +87,6 @@ export function WaitlistPage() {
           </div>
         )}
       </div>
-      {isOwner(staff) && <OutboxPanel />}
-      {offering && <OfferSheet entry={offering} onClose={() => setOffering(null)} />}
     </div>
   )
 }

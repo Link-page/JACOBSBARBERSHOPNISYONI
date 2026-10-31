@@ -15,6 +15,11 @@ const at = (iso: string, status: Appointment['status'], price = 100): Appointmen
   price,
   status,
   notes: '',
+  confirmationStatus: 'not_required',
+  confirmationDeadline: null,
+  confirmedAt: null,
+  confirmedBy: null,
+  cancellationReason: null,
 })
 
 const now = new Date('2030-01-08T12:00:00')

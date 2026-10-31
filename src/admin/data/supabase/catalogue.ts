@@ -5,7 +5,7 @@ import { changedRows, unwrap } from './client'
 import { toBarber, toService, type BarberRow, type ServiceRow } from './mappers'
 
 const barberColumns =
-  'id, name, bio, photo_path, active, sort_order, user_id, barber_services(service_id, duration_minutes), working_hours(weekday, start_time, end_time), breaks(weekday, start_time, end_time)'
+  'id, name, bio, photo_path, whatsapp, active, sort_order, user_id, account:profiles!barbers_user_id_fkey(can_broadcast), barber_services(service_id, duration_minutes), working_hours(weekday, start_time, end_time), breaks(weekday, start_time, end_time)'
 
 export const createBarbers = (db: SupabaseClient): AdminApi['barbers'] => ({
   async list() {
@@ -14,7 +14,7 @@ export const createBarbers = (db: SupabaseClient): AdminApi['barbers'] => ({
   },
 
   async save(barber) {
-    const fields = { name: barber.name, bio: barber.bio, photo_path: barber.photoUrl, active: barber.active, sort_order: barber.sortOrder }
+    const fields = { name: barber.name, bio: barber.bio, photo_path: barber.photoUrl, whatsapp: barber.whatsapp.replace(/\D/g, ''), active: barber.active, sort_order: barber.sortOrder }
     const [{ id }] = barber.id
       ? changedRows(await db.from('barbers').update(fields).eq('id', barber.id).select('id'))
       : [unwrap(await db.from('barbers').insert(fields).select('id').single<{ id: string }>())]
@@ -31,6 +31,10 @@ export const createBarbers = (db: SupabaseClient): AdminApi['barbers'] => ({
 
   async setAccountRole(email, role, barberId) {
     unwrap(await db.rpc('admin_set_user_role', { p_email: email, p_role: role, p_barber: barberId }))
+  },
+
+  async setBroadcastPermission(userId, allowed) {
+    unwrap(await db.rpc('admin_set_broadcast_permission', { p_profile: userId, p_allowed: allowed }))
   },
 })
 

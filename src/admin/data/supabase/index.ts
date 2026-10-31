@@ -5,6 +5,7 @@ import { createAppointments } from './appointments'
 import { createAuth } from './auth'
 import { createBarbers, createServices } from './catalogue'
 import { createCustomers } from './customers'
+import { createNotifications } from './notifications'
 import { createSchedule } from './schedule'
 import { createSettings } from './settings'
 import { createWaitlist } from './waitlist'
@@ -24,6 +25,7 @@ export function createSupabaseAdminApi(db: SupabaseClient): AdminApi {
     barbers: createBarbers(db),
     services: createServices(db),
     customers: createCustomers(db),
+    notifications: createNotifications(db),
     settings: createSettings(db),
   }
 }

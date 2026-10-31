@@ -3,6 +3,9 @@ import type {
   AppointmentStatus,
   AuthState,
   Barber,
+  BroadcastInput,
+  BroadcastRecord,
+  BroadcastResult,
   BusinessSettings,
   Customer,
   CustomerDetail,
@@ -11,7 +14,6 @@ import type {
   GalleryItem,
   HistoryEvent,
   NewAppointment,
-  OutboxMessage,
   Service,
   Slot,
   StaffRole,
@@ -42,6 +44,8 @@ export interface AdminApi {
     reschedule(id: string, startsAt: string, barberId?: string): Promise<Appointment>
     cancel(id: string, reason: string): Promise<Appointment>
     setStatus(id: string, status: Extract<AppointmentStatus, 'completed' | 'no_show'>): Promise<Appointment>
+    /** Confirms attendance for the customer (e.g. after a phone call). */
+    confirm(id: string): Promise<Appointment>
     history(id: string): Promise<HistoryEvent[]>
   }
 
@@ -55,18 +59,18 @@ export interface AdminApi {
 
   waitlist: {
     list(range: DateRange): Promise<WaitlistEntry[]>
-    offer(entryId: string, startsAt: string, barberId: string): Promise<WaitlistEntry>
     remove(entryId: string): Promise<void>
-    /** Expires unclaimed offers and passes their slots on. */
+    /** Runs the scheduler now (confirmation requests, auto-cancel, reminders); normally cron does. */
     runMaintenance(): Promise<number>
-    outbox(): Promise<OutboxMessage[]>
   }
 
   barbers: {
     list(): Promise<Barber[]>
-    save(barber: Omit<Barber, 'id' | 'linkedUserId'> & { id?: string }): Promise<Barber>
+    save(barber: Omit<Barber, 'id' | 'linkedUserId' | 'linkedCanBroadcast'> & { id?: string }): Promise<Barber>
     /** Gives a signed-up account a staff role, optionally linked to a barber. */
     setAccountRole(email: string, role: StaffRole | 'customer', barberId: string | null): Promise<void>
+    /** Owner only: allow a barber's account to send messages to customers. */
+    setBroadcastPermission(userId: string, allowed: boolean): Promise<void>
   }
 
   services: {
@@ -84,6 +88,10 @@ export interface AdminApi {
     addNote(customerId: string, body: string): Promise<void>
   }
 
+  notifications: {
+    send(input: BroadcastInput): Promise<BroadcastResult>
+    history(): Promise<BroadcastRecord[]>
+  }
   settings: {
     get(): Promise<BusinessSettings>
     save(settings: BusinessSettings): Promise<void>

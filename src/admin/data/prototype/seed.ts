@@ -22,6 +22,8 @@ export type ApptRow = {
   price: number
   status: 'booked' | 'completed' | 'cancelled' | 'no_show'
   notes: string
+  confirmationStatus: 'pending' | 'confirmed' | 'not_required'
+  confirmedAt: Date | null
 }
 
 const hours = (from: string, to: string) =>
@@ -39,6 +41,8 @@ export const seedBarbers = (): Barber[] => [
     active: true,
     sortOrder: 0,
     linkedUserId: 'proto-owner',
+    linkedCanBroadcast: true,
+    whatsapp: '',
     services: menu.map((s) => ({ serviceId: s.id, durationMinutes: null })),
     hours: hours('09:00', '20:00'),
     breaks: [0, 1, 2, 3, 4].map((weekday) => ({ weekday, start: '13:00', end: '13:30' })),
@@ -51,6 +55,8 @@ export const seedBarbers = (): Barber[] => [
     active: false,
     sortOrder: 1,
     linkedUserId: 'proto-barber',
+    linkedCanBroadcast: false,
+    whatsapp: '',
     services: menu.slice(0, 4).map((s) => ({ serviceId: s.id, durationMinutes: null })),
     hours: hours('10:00', '19:00'),
     breaks: [],
@@ -71,6 +77,11 @@ export const seedSettings = (): BusinessSettings => ({
   bookingWindowDays: 60,
   cancellationNoticeHours: 3,
   waitlistOfferMinutes: 120,
+    confirmationRequestTime: '10:00',
+    confirmationDeadlineTime: '20:00',
+    autoCancelUnconfirmed: true,
+    lateBookingPolicy: 'auto_confirm',
+    reminderMinutesBefore: 120,
   bookingPolicy: 'התשלום במספרה.',
   cancellationPolicy: 'אפשר לבטל או לשנות תור עד 3 שעות לפני מועדו.',
   appearance: { theme: 'system' },
@@ -132,6 +143,9 @@ export function seedAppointments(now: Date, barbers: Barber[], services: Service
           price: service.price,
           status: past ? (roll < 0.08 ? 'no_show' : roll < 0.18 ? 'cancelled' : 'completed') : date !== fullDay && roll < 0.08 ? 'cancelled' : 'booked',
           notes: '',
+          // Future bookings show a mix of attendance states, so the screens can be exercised.
+          confirmationStatus: past ? 'not_required' : roll < 0.45 ? 'confirmed' : 'pending',
+          confirmedAt: !past && roll < 0.45 ? now : null,
         })
         t += Math.ceil(service.durationMinutes / 30) * 30
       } else {

@@ -8,6 +8,7 @@ export const pages: Record<Exclude<RouteId, 'more'>, React.LazyExoticComponent<(
   calendar: lazy(() => import('./features/calendar/calendar-page').then((m) => ({ default: m.CalendarPage }))),
   waitlist: lazy(() => import('./features/waitlist/waitlist-page').then((m) => ({ default: m.WaitlistPage }))),
   customers: lazy(() => import('./features/customers/customers-page').then((m) => ({ default: m.CustomersPage }))),
+  notifications: lazy(() => import('./features/notifications/notifications-page').then((m) => ({ default: m.NotificationsPage }))),
   barbers: lazy(() => import('./features/barbers/barbers-page').then((m) => ({ default: m.BarbersPage }))),
   services: lazy(() => import('./features/services/services-page').then((m) => ({ default: m.ServicesPage }))),
   settings: lazy(() => import('./features/settings/settings-page').then((m) => ({ default: m.SettingsPage }))),

@@ -10,7 +10,9 @@ export const createAuth = (db: SupabaseClient): AdminApi['auth'] => ({
     const { data } = await db.auth.getSession()
     const user = data.session?.user
     if (!user) return { status: 'signed-out' }
-    const profile = unwrap(await db.from('profiles').select('full_name, role').eq('id', user.id).maybeSingle<{ full_name: string; role: string }>())
+    const profile = unwrap(
+      await db.from('profiles').select('full_name, role, can_broadcast').eq('id', user.id).maybeSingle<{ full_name: string; role: string; can_broadcast: boolean }>(),
+    )
     if (!profile || (profile.role !== 'owner' && profile.role !== 'barber')) {
       return { status: 'not-staff', email: user.email ?? '' }
     }
@@ -24,6 +26,7 @@ export const createAuth = (db: SupabaseClient): AdminApi['auth'] => ({
         name: profile.full_name || chair?.name || user.email || '',
         role: profile.role,
         barberId: chair?.id ?? null,
+        canBroadcast: profile.role === 'owner' || profile.can_broadcast === true,
       },
     }
   },

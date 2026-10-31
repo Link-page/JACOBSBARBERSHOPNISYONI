@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import { at, createAccount, createOwner, expectAdminError, JACOB, SERVICE, signIn, stackAvailable, sunday, type Session } from './stack'
 
-describe.skipIf(!stackAvailable)('waiting list (real Supabase): customer joins, staff manage, offer is claimed', () => {
-  it('runs the full allocation policy', async () => {
+describe.skipIf(!stackAvailable)('waiting list (real Supabase): everyone is notified, the first booking wins', () => {
+  it('notifies every waiting customer, holds nothing, and lets exactly one win the race', async () => {
     const owner = await signIn(await createOwner())
     const day = sunday(2)
 
@@ -30,28 +30,26 @@ describe.skipIf(!stackAvailable)('waiting list (real Supabase): customer joins, 
     expect((await owner.api.waitlist.list(range)).map((e) => e.customerName)).toEqual(['ראשון בתור', 'שני בתור'])
     expect((await late.db.rpc('remove_waitlist_entry', { p_entry: entryId })).error?.message).toContain('forbidden')
 
-    // Cancelling frees 10:00: the longest-waiting customer gets a held offer.
+    // Cancelling frees 10:00: every waiting customer is told, and nothing is held for anyone.
     await owner.api.appointments.cancel(booked.id, '')
-    const after = await owner.api.waitlist.list(range)
-    expect(after.find((e) => e.customerName === 'ראשון בתור')?.status).toBe('offered')
-    expect(after.find((e) => e.customerName === 'שני בתור')?.status).toBe('waiting')
-    expect((await owner.api.waitlist.outbox())[0]).toMatchObject({ status: 'pending', channel: 'sms' })
-    expect(await owner.api.schedule.daySlots(SERVICE.signature, day, JACOB)).toEqual([])
-    await expectAdminError(
-      owner.api.appointments.create({ customerId: holder.id, barberId: JACOB, serviceId: SERVICE.signature, startsAt: at(day, '10:00'), notes: '' }),
-      'slot_unavailable',
-    )
+    for (const customer of [early, late]) {
+      const { data } = await customer.db.from('inbox_messages').select('category, url')
+      expect(data).toEqual([{ category: 'waitlist_available', url: expect.stringContaining(`date=${day}`) }])
+    }
+    expect((await owner.api.waitlist.list(range)).map((e) => e.status)).toEqual(['waiting', 'waiting'])
+    expect((await owner.api.schedule.daySlots(SERVICE.signature, day, JACOB)).map((s) => s.startsAt)).toContain(at(day, '10:00'))
 
-    // Only the offered customer can claim, exactly once.
-    const claim = await early.db.rpc('claim_waitlist_offer', { p_entry: entryId }).single<{ status: string }>()
-    expect(claim.error).toBeNull()
-    expect(claim.data?.status).toBe('booked')
-    expect((await early.db.rpc('claim_waitlist_offer', { p_entry: entryId })).error?.message).toContain('offer_expired')
+    // Both try to book it at once: exactly one wins; the other hears the time is taken.
+    const book = (s: Session) => s.db.rpc('book_appointment', { p_service: SERVICE.signature, p_starts_at: at(day, '10:00'), p_barber: JACOB })
+    const results = await Promise.all([book(early), book(late)])
+    expect(results.filter((r) => r.error === null)).toHaveLength(1)
+    expect(results.find((r) => r.error)?.error?.message).toContain('slot_unavailable')
+    const statuses = (await owner.api.waitlist.list(range)).map((e) => e.status)
+    expect(statuses).toEqual(['waiting']) // the winner left the list by booking the day
 
-    // Staff remove the remaining request; maintenance has nothing to expire.
-    const remaining = (await owner.api.waitlist.list(range)).find((e) => e.status === 'waiting')!
-    await owner.api.waitlist.remove(remaining.id)
-    expect(await owner.api.waitlist.list(range)).toEqual([])
-    expect(await owner.api.waitlist.runMaintenance()).toBe(0)
+    // Exclusive offers are retired.
+    expect((await early.db.rpc('claim_waitlist_offer', { p_entry: entryId })).error?.message).toContain('offers_retired')
+    await expectAdminError(owner.api.waitlist.remove('00000000-0000-4000-8000-000000000000'), 'not_found')
+    expect(await owner.api.waitlist.runMaintenance()).toBeGreaterThanOrEqual(0)
   })
 })

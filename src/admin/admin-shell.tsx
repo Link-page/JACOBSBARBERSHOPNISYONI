@@ -7,7 +7,7 @@ import { AppointmentSheetsProvider } from './features/appointments/appointment-s
 import { DesktopLayout } from './layout/desktop-layout'
 import { MorePage } from './layout/more-page'
 import { PhoneLayout } from './layout/phone-layout'
-import { isOwner } from './lib/permissions'
+import { canSeeRoute } from './lib/permissions'
 import { useRoute, type RouteId } from './lib/router'
 import { useIsDesktop } from '@/hooks/use-media-query'
 import { pages } from './pages'
@@ -20,7 +20,7 @@ function useAllowedRoute(): RouteId {
   const { id } = useRoute()
   if (id === 'more') return desktop ? 'dashboard' : 'more'
   const def = routes.find((r) => r.id === id)
-  return def?.ownerOnly && !isOwner(staff) ? 'dashboard' : id
+  return def && !canSeeRoute(def, staff) ? 'dashboard' : id
 }
 
 export function AdminShell({ onSignOut }: { onSignOut: () => void }) {

@@ -14,6 +14,11 @@ export type AppointmentRow = {
   price: string | number
   status: Appointment['status']
   notes: string
+  confirmation_status: Appointment['confirmationStatus']
+  confirmation_deadline: string | null
+  confirmed_at: string | null
+  confirmed_by: Appointment['confirmedBy']
+  cancellation_reason: Appointment['cancellationReason']
   customer?: CustomerJoin
 }
 
@@ -29,6 +34,11 @@ export const toAppointment = (r: AppointmentRow): Appointment => ({
   price: Number(r.price),
   status: r.status,
   notes: r.notes,
+  confirmationStatus: r.confirmation_status ?? 'not_required',
+  confirmationDeadline: r.confirmation_deadline ?? null,
+  confirmedAt: r.confirmed_at ?? null,
+  confirmedBy: r.confirmed_by ?? null,
+  cancellationReason: r.cancellation_reason ?? null,
 })
 
 const hhmm = (time: string) => time.slice(0, 5)
@@ -38,6 +48,8 @@ export type BarberRow = {
   name: string
   bio: string
   photo_path: string | null
+  whatsapp: string
+  account?: { can_broadcast: boolean } | null
   active: boolean
   sort_order: number
   user_id: string | null
@@ -54,6 +66,8 @@ export const toBarber = (r: BarberRow): Barber => ({
   active: r.active,
   sortOrder: r.sort_order,
   linkedUserId: r.user_id,
+  linkedCanBroadcast: r.account?.can_broadcast ?? false,
+  whatsapp: r.whatsapp ?? '',
   services: r.barber_services.map((s) => ({ serviceId: s.service_id, durationMinutes: s.duration_minutes })),
   hours: r.working_hours.map((h) => ({ weekday: h.weekday, start: hhmm(h.start_time), end: hhmm(h.end_time) })),
   breaks: r.breaks.map((h) => ({ weekday: h.weekday, start: hhmm(h.start_time), end: hhmm(h.end_time) })),
@@ -143,6 +157,11 @@ export type SettingsRow = {
   cancellation_notice_hours: number
   waitlist_offer_minutes: number
   booking_policy: string
+  confirmation_request_time: string
+  confirmation_deadline_time: string
+  auto_cancel_unconfirmed: boolean
+  late_booking_policy: BusinessSettings['lateBookingPolicy']
+  reminder_minutes_before: number
   cancellation_policy: string
   appearance: { theme?: BusinessSettings['appearance']['theme'] }
 }
@@ -162,6 +181,11 @@ export const toSettings = (r: SettingsRow): BusinessSettings => ({
   cancellationNoticeHours: r.cancellation_notice_hours,
   waitlistOfferMinutes: r.waitlist_offer_minutes,
   bookingPolicy: r.booking_policy,
+  confirmationRequestTime: hhmm(r.confirmation_request_time ?? '10:00'),
+  confirmationDeadlineTime: hhmm(r.confirmation_deadline_time ?? '20:00'),
+  autoCancelUnconfirmed: r.auto_cancel_unconfirmed ?? true,
+  lateBookingPolicy: r.late_booking_policy ?? 'auto_confirm',
+  reminderMinutesBefore: r.reminder_minutes_before ?? 120,
   cancellationPolicy: r.cancellation_policy,
   appearance: { theme: r.appearance?.theme ?? 'system' },
 })
@@ -181,6 +205,11 @@ export const fromSettings = (s: BusinessSettings): Omit<SettingsRow, never> => (
   cancellation_notice_hours: s.cancellationNoticeHours,
   waitlist_offer_minutes: s.waitlistOfferMinutes,
   booking_policy: s.bookingPolicy,
+  confirmation_request_time: s.confirmationRequestTime,
+  confirmation_deadline_time: s.confirmationDeadlineTime,
+  auto_cancel_unconfirmed: s.autoCancelUnconfirmed,
+  late_booking_policy: s.lateBookingPolicy,
+  reminder_minutes_before: s.reminderMinutesBefore,
   cancellation_policy: s.cancellationPolicy,
   appearance: s.appearance,
 })
