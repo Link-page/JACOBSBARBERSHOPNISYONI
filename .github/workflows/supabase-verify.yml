@@ -32,11 +32,17 @@ jobs:
       - run: npm ci
       - name: Start Supabase (applies migrations and seed)
         run: npx --yes supabase@2.122.0 start -x realtime,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+      # These are the disposable local stack's built-in development keys (valid
+      # only on this runner's 127.0.0.1), never the hosted project's. Masked anyway.
       - name: Pass the local stack's endpoint and development keys to the tests
         run: |
           npx --yes supabase@2.122.0 status -o env \
             | grep -E '^(API_URL|ANON_KEY|PUBLISHABLE_KEY|SERVICE_ROLE_KEY|SECRET_KEY)=' \
-            | sed -e 's/^/STACK_/' -e 's/"//g' >> "$GITHUB_ENV"
+            | sed -e 's/"//g' > "$RUNNER_TEMP/stack.env"
+          while IFS='=' read -r name value; do
+            [ "$name" = API_URL ] || echo "::add-mask::$value"
+            echo "STACK_$name=$value" >> "$GITHUB_ENV"
+          done < "$RUNNER_TEMP/stack.env"
       - run: npm run test:stack
       - name: Stop Supabase
         if: always()

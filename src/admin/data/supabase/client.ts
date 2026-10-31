@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-import { toAdminError } from '../errors'
+import { AdminError, toAdminError } from '../errors'
 import { supabaseSettings } from '../config'
 
 /**
@@ -26,7 +26,7 @@ export function unwrap<T>(result: { data: T | null; error: unknown }): T {
  */
 export function changedRows<T>(result: { data: T[] | null; error: unknown }): T[] {
   const rows = unwrap(result) ?? []
-  if (rows.length === 0) throw toAdminError('forbidden')
+  if (rows.length === 0) throw new AdminError('forbidden')
   return rows
 }
 
