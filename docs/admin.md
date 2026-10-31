@@ -3,7 +3,11 @@
 Staff management for the barbershop: dashboard, calendar, appointments, waiting lists, team, services, customers and business settings. It runs on desktop and on iPhone, in Hebrew RTL.
 
 - **URL:** `/admin/` (production: https://link-page.github.io/JACOBSBARBERSHOPNISYONI/admin/ once deployed from `main`).
-- **Status:** the admin and the database layer are built and tested. The admin is **not connected to a live backend yet**; follow [Setup](#setup) to connect it.
+- **Status:**
+  - The admin is wired to Supabase Auth and the database.
+  - It has been verified against a real Supabase stack in CI, and read-only against the hosted project.
+  - It is **not published**: `main` does not contain it yet.
+  - See [Verification](#verification) and [Before publishing](#before-publishing).
 
 ## Architecture
 
@@ -11,8 +15,9 @@ Staff management for the barbershop: dashboard, calendar, appointments, waiting 
 | --- | --- | --- |
 | Database | `supabase/migrations/` | Schema, constraints, availability, booking and waiting-list functions, row-level security, audit trail |
 | Domain logic | `src/booking/` | Pure scheduling rules (`schedule-engine.ts`), calendar maths, day parts |
-| Admin data access | `src/admin/data/` | The `AdminApi` contract, its Supabase implementation, and a development-only prototype |
+| Admin data access | `src/admin/data/` | The `AdminApi` contract, its Supabase implementation (`supabase/`, one factory per area, bound to a client), and a development-only prototype |
 | Admin UI | `src/admin/` | Auth gate, desktop and phone layouts, feature screens |
+| Key policy | `src/lib/supabase-key.ts` | Tells publishable, legacy anon, secret and malformed keys apart; shared by the admin and the build checks |
 
 ### Why Supabase
 
@@ -21,7 +26,7 @@ GitHub Pages serves static files only, so bookings and administration need a hos
 **Supabase** (managed Postgres, Auth and Storage) fits this project:
 
 - **Correctness at the database:** Postgres exclusion constraints make double booking impossible, and transactions plus row locks make simultaneous requests safe.
-- **Security without our own server:** row-level security and `SECURITY DEFINER` functions enforce permissions in the database. The static site can talk to it directly using only the public anon key.
+- **Security without our own server:** row-level security and `SECURITY DEFINER` functions enforce permissions in the database. The static site talks to it directly using only the public publishable key.
 - **Built-in pieces:** Auth (sessions, password reset, invites, MFA) and Storage (photos, logo, gallery).
 - **Cost:** the free tier is enough to start, and the paid tier is predictable.
 
@@ -36,7 +41,12 @@ GitHub Pages serves static files only, so bookings and administration need a hos
 
 ### Security model
 
-- **The browser holds only the project URL and the anon key.** Both are public by design. The `service_role` key must never appear in the app, `.env` files committed to git, or GitHub variables.
+- **The browser holds only the project URL and the publishable key** (`sb_publishable_…`; a legacy `anon` JWT also works).
+  - Both are public by design. They appear in the website's JavaScript and in GitHub Actions logs, because repository variables are not masked.
+  - Secret keys (`sb_secret_…`) and the legacy `service_role` key must never appear in the app, in committed `.env` files or in GitHub variables. The project enforces this in three places:
+    - `scripts/check-supabase-env.ts` fails the deploy if one is configured
+    - `scripts/check-admin-bundle.ts` fails if any bundle contains one
+    - the admin refuses to start with one
 - **Default deny.** All table privileges are revoked, then the minimum is granted back. Row-level security is on for all 15 tables.
 - **Roles live in `profiles.role`:** `owner`, `barber` or `customer`. New accounts are customers. Only an owner can change roles, through `admin_set_user_role`, and the last owner can't demote themselves.
 - **Appointments and waiting-list entries can only be written through database functions.** Each function:
@@ -46,6 +56,7 @@ GitHub Pages serves static files only, so bookings and administration need a hos
   - relies on the exclusion constraint as the final guard
 - **Barbers see only their own chair:** its appointments, the customers they serve, and their own time blocks. Customers see only their own records. Anonymous visitors see only the public catalogue and free time slots.
 - **Owner only:** business settings, services, prices, team, closed dates, the outbox and the audit log.
+- **Refused writes are reported, not swallowed.** Row-level security filters forbidden rows out of an update or delete silently. The adapter treats "zero rows changed" as `forbidden`, so staff never see "saved" for a change that didn't happen.
 - **The audit log** records every change to appointments, the catalogue, customers and settings, with the acting user.
 - **Hiding `/admin` is not security, and it isn't relied on.** The admin page is `noindex`, but every request is authorised by the database.
 
@@ -68,7 +79,7 @@ Customers also have to respect:
 
 ### Waiting list policy
 
-1. **Joining:** a customer can join only for a day with no free slot for their service and barber choice. There's one active request per customer, service, day and barber choice.
+1. **Joining:** a customer can join only for a day with no free slot for their service and barber choice. There's one active request per customer, service, day and barber choice. Staff can view, offer and remove requests, but they don't create them.
 2. **Offers:** when time frees up through a cancellation, a reschedule or an expired offer, waiting requests for that day are considered oldest first. Each gets at most one offer: the earliest slot that fits.
 3. **Holds:** an open offer holds its slot for that customer until it expires (default 120 minutes), so a slot is never promised twice.
 4. **Claiming:** the customer claims the offer with `claim_waitlist_offer`, which books it atomically.
@@ -79,7 +90,9 @@ Customers also have to respect:
 
 These steps are needed before the admin can be used for real.
 
-1. **Create a Supabase project** at https://supabase.com, choosing a region near Israel (e.g. Frankfurt). From *Project Settings → API*, note the **Project URL** and the **anon public** key. Never use the `service_role` key in this app.
+1. **Create a Supabase project** at https://supabase.com, choosing a region near Israel (e.g. Frankfurt).
+   - From *Project Settings → API Keys*, note the **Project URL** and the **publishable** key (`sb_publishable_…`).
+   - Never use a secret key (`sb_secret_…`) or the `service_role` key in this app.
 
 2. **Create the database.** Either use the Supabase CLI:
    ```bash
@@ -89,57 +102,139 @@ These steps are needed before the admin can be used for real.
    ```
    Or, in the dashboard's *SQL Editor*, run every file in `supabase/migrations/` in order (0001 → 0009), then `supabase/seed.sql`.
 
-3. **Configure authentication.** Under *Authentication → Providers*, keep Email enabled. Until the customer app uses accounts, turn off *Allow new users to sign up* and invite staff from *Authentication → Users → Invite*. Under *URL Configuration*, set the Site URL to `https://link-page.github.io/JACOBSBARBERSHOPNISYONI/admin/`.
+3. **Configure authentication.**
+   - **Sign-in methods:** under *Authentication → Sign In / Providers*:
+     - keep Email enabled, with **Confirm email** on
+     - until the customer app uses accounts, turn **off** *Allow new users to sign up*
+     - add staff from *Authentication → Users → Add user / Invite*
+   - **URL Configuration:**
+     - set the Site URL to `https://link-page.github.io/JACOBSBARBERSHOPNISYONI/admin/`
+     - add `http://localhost:5173/JACOBSBARBERSHOPNISYONI/admin/` to the redirect URLs for local testing
 
-4. **Make the first owner.** After Jacob accepts the invite and sets a password, run this in the SQL Editor (with his real email):
+   Invites and password-reset emails link to these addresses.
+
+4. **Make the first owner.** After Jacob's account exists, run this in the SQL Editor (with his real email):
    ```sql
    update public.profiles set role = 'owner'
    where id = (select id from auth.users where email = 'JACOB_EMAIL');
    update public.barbers set user_id = (select id from auth.users where email = 'JACOB_EMAIL')
    where id = '11111111-1111-4111-8111-111111111111';
    ```
-   Future barbers: invite them, then link them from *Team → (barber) → Admin access* in the admin.
+   Future barbers: invite them, then link them from *צוות → (barber) → גישה לניהול* in the admin.
 
 5. **Schedule offer expiry.** Enable the `pg_cron` extension under *Database → Extensions*, then run:
    ```sql
    select cron.schedule('waitlist-maintenance', '*/5 * * * *', 'select public.run_waitlist_maintenance()');
    ```
+   Check it with `select jobname, schedule from cron.job;`.
 
-6. **Connect the website build.** In GitHub, go to *Settings → Secrets and variables → Actions → Variables* and add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. The deploy workflow passes them to the build.
+6. **Connect the website build.** In GitHub, go to *Settings → Secrets and variables → Actions → Variables* and add:
+   - `VITE_SUPABASE_URL`: the Project URL
+   - `VITE_SUPABASE_ANON_KEY`: the **publishable** key, despite the variable's name
+
+   The deploy workflow validates both variables, then passes them to the build.
 
 7. **Local development against Supabase:** copy `.env.example` to `.env.local` and fill in the same two values. `.env.local` is git-ignored.
 
 ## Development
 
 ```bash
-npm run dev        # admin at http://localhost:5173/JACOBSBARBERSHOPNISYONI/admin/
-npm test           # unit tests (scheduling, permissions, statistics, calendar ranges)
-npm run test:db    # database tests — needs a disposable Postgres 16, see below
-npm run lint && npm run build
+npm run dev            # admin at http://localhost:5173/JACOBSBARBERSHOPNISYONI/admin/
+npm test               # unit tests
+npm run test:db        # database tests: needs a disposable Postgres 16, see below
+npm run test:stack     # integration tests: needs a local Supabase stack, see below
+npm run test:hosted    # read-only checks against the project in VITE_SUPABASE_URL
+npm run lint && npm run typecheck:tests && npm run build
 ```
 
 **Without Supabase configured,** `npm run dev` runs the admin on a **development prototype**: in-memory sample data with a visible banner and an owner/barber role switch. It applies the same rules, resets on reload, and is never included in production builds. A production build without Supabase shows only a setup notice: no login and no data.
 
-**Database tests** run the real migrations against Postgres, with a small shim emulating Supabase's `auth.uid()` and API roles. They cover:
-- availability
-- booking and simultaneous booking
-- appointment changes and the notice period
-- access control for every role
-- the waiting list
-- owner operations
+**With `.env.local` filled in,** `npm run dev` runs the real admin against that project. Anything you do there is real data.
 
-Locally, set `TEST_DATABASE_URL` to a superuser connection on a throwaway server; the default is `postgres://postgres@127.0.0.1:54329/postgres`. The tests drop and recreate a `jacobs_test` database. CI runs them against a Postgres 16 service.
+## Verification
 
-## Not done yet
+Four layers. Each one says plainly what it ran against.
 
-- **The customer app is not connected to Supabase yet.** It still uses its on-device demo data. Connecting it needs:
+| Layer | Runs against | Where it runs | Command |
+| --- | --- | --- | --- |
+| Unit | Scheduling rules, permissions, statistics, key policy, adapter result helpers | *CI* workflow, locally | `npm test` |
+| Database | The migrations on plain **Postgres 16**, with a shim emulating `auth.uid()` and the API roles | *CI* workflow (Postgres service), locally | `npm run test:db` |
+| Integration | A **real Supabase stack** (Auth, PostgREST, RLS, Storage) built from `supabase/migrations` and `seed.sql`, driven **through the admin's own Supabase adapter** as different signed-in users | *Supabase verification* workflow, job *local stack* | `npm run test:stack` |
+| Hosted, read-only | **The hosted project** in the repository variables, as an anonymous visitor. Writes nothing | *Supabase verification* workflow, job *hosted* | `npm run test:hosted` |
+
+**Integration** (`tests/stack/`) covers:
+- **Access:**
+  - anonymous visitors get only the catalogue
+  - a customer account is "not staff" and every business write is refused
+  - a barber sees and manages only their own chair
+- **Appointments:**
+  - the owner session resolves to the owner and Jacob's chair
+  - create, double booking refused, reschedule, edit, history, cancel
+  - completed and no-show outcomes
+  - two simultaneous bookings for one slot: exactly one succeeds
+  - blocking time, capacity, unblocking
+- **Waiting list:** the full policy. Customers join a full day; a cancellation offers the slot to the oldest request and holds it; claiming books it; expiry passes it on; the outbox shows the queued (unsent) messages.
+- **Catalogue:**
+  - settings round trip
+  - services create, assign and reorder
+  - Jacob's schedule round trip
+  - only the owner can upload media
+
+Locally, `npm run test:stack` needs Docker and `npx supabase@2.122.0 start`, then the `STACK_*` variables from `npx supabase status -o env`. Without them, the suite skips.
+
+**Hosted, read-only** (`tests/hosted/`) covers:
+- the seeded catalogue and the current month's availability are served
+- every private table is closed to anonymous callers
+- all 13 staff and customer functions are installed and closed to anonymous callers
+- a wrong password is rejected
+
+The same job also:
+- validates the variables without printing them
+- proves the build compiled both in, with no secret key in any bundle and none of the Supabase settings in the customer bundle
+- reports the project's Auth settings (`scripts/report-hosted-auth.ts`): public sign-up and email confirmation, as warnings
+
+**Database tests:** locally, set `TEST_DATABASE_URL` to a superuser connection on a throwaway server; the default is `postgres://postgres@127.0.0.1:54329/postgres`. The tests drop and recreate a `jacobs_test` database.
+
+### What automation does not cover
+
+Signing in to the **hosted** project as the owner and changing data there. That would need the owner's password in GitHub, which this project doesn't store. The same code paths run on the local stack, but the hosted project's own Auth settings, owner link and data are checked only by hand.
+
+### Manual owner check (hosted project)
+
+Run the real admin locally with `.env.local` (Setup step 7), open http://localhost:5173/JACOBSBARBERSHOPNISYONI/admin/ and sign in as the owner. This uses live data, so give anything you create the name **בדיקה** and cancel it at the end.
+
+1. **Owner access.** The dashboard greets Jacob, and the menu shows **הגדרות**, **צוות** and **טיפולים**. *צוות → יעקב → גישה לניהול* shows your email.
+2. **New appointment.** Create customer **בדיקה** with a test phone number and book tomorrow with Jacob. The appointment appears in the day and week calendar.
+3. **Double booking.** Try the same time again: the time is not offered, and typing it gives "השעה כבר לא פנויה".
+4. **Reschedule.** Move the appointment to another time. Its history shows the change.
+5. **Block time.** Block an hour: it disappears from the new-appointment times. Then remove the block.
+6. **Waiting list.** The page loads and is empty (customers can't join until the customer app is connected). **בדיקת הצעות שפגו** completes without an error.
+7. **Cancel.** Cancel the test appointment. The calendar shows it struck through as cancelled.
+8. **Signed out.** Sign out, then open `/admin/` in a private window. Only the sign-in screen appears, and a wrong password is rejected.
+
+## Before publishing
+
+**Must be done** before merging to `main`:
+
+1. **Manual owner check** above, on the hosted project.
+2. **Auth settings** (Setup step 3):
+   - public sign-up off
+   - email confirmation on
+   - Site URL and redirect URLs set
+
+   The *hosted* job in *Supabase verification* reports the first two on every run.
+3. **Offer expiry schedule** (Setup step 5). Without it, an unclaimed waiting-list offer keeps its slot blocked until a staff member presses **בדיקת הצעות שפגו**.
+4. **Merge to `main`** with the owner's approval. The deploy workflow refuses unsafe Supabase settings, then builds with the variables.
+5. **After deployment,** open `/admin/` on the live site, sign in, and repeat check 1. The live site is confirmed only once this works.
+
+**Known limitations** (not blockers for the admin, but decide on them):
+
+- **The customer app is not connected to Supabase yet.** It still uses its on-device demo data, and bookings made there never reach the admin. Connecting it needs:
   - a short contact-details step (name and phone) with anonymous or phone sign-in
   - loading services and team from the database
 
   The database functions it needs already exist and are tested: `book_appointment`, `join_waitlist`, `claim_waitlist_offer`, `cancel_appointment`.
 - **No SMS or WhatsApp provider is connected.** Offers are queued but not sent.
-- **Not tested against a live Supabase project.** The admin's Supabase adapter is type-checked; the SQL is tested on Postgres 16 with an auth shim.
-- **Missing admin features:**
-  - MFA enrolment and password reset screens. Use the Supabase dashboard meanwhile.
-  - Barbers editing their own breaks. The database allows it; the screen is owner-only for now.
+- **No MFA or password-reset screens in the admin.** Use the Supabase dashboard (*Authentication → Users*) meanwhile. The admin does not require MFA.
+- **Barbers can't edit their own breaks yet.** The database allows it; the screen is owner-only for now.
 - **Time zone:** the admin uses the device time zone, which is assumed to be the shop's (`Asia/Jerusalem`).
