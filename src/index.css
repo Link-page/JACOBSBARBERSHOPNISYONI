@@ -299,10 +299,20 @@
     @apply border-border;
   }
 
-  html,
-  body,
-  #root {
+  /*
+   * The customer app is a fixed-viewport shell: each screen scrolls inside
+   * itself, like a native app, so the page itself must not scroll or bounce.
+   * Scoped to html.app-shell (index.html) — the admin scrolls the document.
+   */
+  html.app-shell,
+  html.app-shell body,
+  html.app-shell #root {
     height: 100%;
+  }
+
+  html.app-shell body {
+    overflow: hidden;
+    overscroll-behavior: none;
   }
 
   html {
@@ -316,8 +326,6 @@
 
   body {
     margin: 0;
-    overflow: hidden;
-    overscroll-behavior: none;
     background-color: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans);

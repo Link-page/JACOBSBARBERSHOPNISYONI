@@ -17,11 +17,13 @@ export function PhoneLayout({ active, children }: { active: RouteId; children: R
 
   return (
     <div className="min-h-dvh bg-background">
-      <header className="glass-bar sticky top-0 z-30 flex h-14 items-center justify-between px-5 pt-safe">
+      {/* 56px of content below the status bar / notch (the padding is added, not taken from it). */}
+      <header className="glass-bar sticky top-0 z-30 flex h-[calc(3.5rem+env(safe-area-inset-top))] items-center justify-between px-5 pt-safe">
         <p className="wordmark text-subhead">JACOB'S</p>
         <span className="text-footnote text-muted-foreground">{staff.name}</span>
       </header>
-      <main className="px-4 pt-4 pb-32">{children}</main>
+      {/* Bottom padding = the bar's offset + its 64px height + breathing room, so the last item is never under it. */}
+      <main className="px-4 pt-4 pb-[calc(max(env(safe-area-inset-bottom),12px)+6.5rem)]">{children}</main>
       <nav
         aria-label="ניווט ניהול"
         className="glass fixed inset-x-3 bottom-[max(env(safe-area-inset-bottom),12px)] z-30 flex h-16 rounded-[24px] px-1"
