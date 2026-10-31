@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { shop } from '@/data/shop'
 import { springSnappy } from '@/lib/motion'
+import { BellButton } from '@/notifications/components/bell-button'
 import { cn } from '@/lib/utils'
 import { useApp } from '@/store/app-context'
 
@@ -47,6 +48,7 @@ export function DesktopNav() {
           <CalendarPlus className="size-[18px]" />
           קביעת תור
         </Button>
+        <BellButton className="size-10 shadow-none" />
         <button type="button" onClick={() => setTab('profile')} aria-label="פרופיל" className="rounded-full">
           <Avatar aria-hidden className="size-10">
             <AvatarFallback className="text-headline">{profile.fullName.charAt(0)}</AvatarFallback>

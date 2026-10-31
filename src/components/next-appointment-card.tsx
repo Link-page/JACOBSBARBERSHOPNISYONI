@@ -1,8 +1,11 @@
-import { CalendarClock, CalendarPlus, Navigation, type LucideIcon } from 'lucide-react'
+import { CalendarClock, CalendarPlus, MessageCircle, Navigation, type LucideIcon } from 'lucide-react'
 import type { ComponentProps } from 'react'
 
 import { useCatalogue } from '@/catalogue/catalogue-context'
 import { BarberPortrait } from '@/components/barber-portrait'
+import { attendanceView, canSelfManage } from '@/features/confirmation/attendance'
+import { AttendancePanel } from '@/features/confirmation/attendance-panel'
+import { useCancellationRequestLink } from '@/features/confirmation/use-cancellation-link'
 import { useAddToCalendar } from '@/hooks/use-add-to-calendar'
 import { endTime, formatTime, monthName, relativeDay, weekdayLong } from '@/lib/format'
 import { links } from '@/lib/links'
@@ -18,6 +21,8 @@ export function NextAppointmentCard({ appointment }: { appointment: Appointment 
   const barber = barberById(appointment.barberId)
   const start = new Date(appointment.start)
   const time = formatTime(start)
+  const attendance = attendanceView(appointment, now)
+  const whatsapp = useCancellationRequestLink(appointment)
 
   return (
     <article className="surface-ink grain rounded-[28px]">
@@ -51,14 +56,25 @@ export function NextAppointmentCard({ appointment }: { appointment: Appointment 
         </div>
       </div>
 
+      {attendance.kind !== 'none' && (
+        <div className="relative px-5 pt-4">
+          <AttendancePanel appointment={appointment} view={attendance} tone="ink" />
+        </div>
+      )}
+
       <div className="relative mt-5 grid grid-cols-3 divide-x divide-white/10 border-t border-white/10">
         <CardAction icon={Navigation} label="ניווט" href={links.directions} />
         <CardAction icon={CalendarPlus} label="ליומן" onClick={() => addToCalendar(appointment)} />
-        <CardAction
-          icon={CalendarClock}
-          label="שינוי מועד"
-          onClick={() => openBooking({ mode: 'reschedule', appointmentId: appointment.id })}
-        />
+        {canSelfManage(attendance) || !whatsapp ? (
+          <CardAction
+            icon={CalendarClock}
+            label="שינוי מועד"
+            disabled={!canSelfManage(attendance)}
+            onClick={() => openBooking({ mode: 'reschedule', appointmentId: appointment.id })}
+          />
+        ) : (
+          <CardAction icon={MessageCircle} label="וואטסאפ" href={whatsapp} />
+        )}
       </div>
     </article>
   )

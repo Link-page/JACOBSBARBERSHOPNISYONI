@@ -3,14 +3,13 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { useNow } from '@/hooks/use-now'
 
 import { AppContext, type AppContextValue } from './app-context'
-import type { Appearance, BookingRequest, LookViewer, Preferences, Tab } from './types'
+import type { Appearance, BookingRequest, LookViewer, Tab } from './types'
 import { useAppointments } from './use-appointments'
 
 const STORAGE_KEY = 'jacobs.v1'
 
 type Persisted = {
   appearance: Appearance
-  preferences: Preferences
 }
 
 function load(): Partial<Persisted> {
@@ -37,9 +36,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const [tab, setTab] = useState<Tab>('home')
   const [appearance, setAppearance] = useState<Appearance>(initial.appearance ?? 'system')
-  const [preferences, setPreferences] = useState<Preferences>(
-    initial.preferences ?? { reminders: true, offers: false },
-  )
   const [booking, setBooking] = useState<AppContextValue['booking']>({
     open: false,
     request: { mode: 'new' },
@@ -47,7 +43,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   })
   const [look, setLook] = useState<LookViewer>(null)
 
-  useEffect(() => save({ appearance, preferences }), [appearance, preferences])
+  useEffect(() => save({ appearance }), [appearance])
 
   // Light / dark — follows the system unless the user picks one.
   useEffect(() => {
@@ -63,10 +59,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [appearance])
 
   const { appointments, upcoming, past, saveAppointment, cancel } = useAppointments(now)
-
-  const setPreference = useCallback((key: keyof Preferences, value: boolean) => {
-    setPreferences((p) => ({ ...p, [key]: value }))
-  }, [])
 
   const openBooking = useCallback((request: BookingRequest = { mode: 'new' }) => {
     setLook(null)
@@ -89,8 +81,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       cancel,
       appearance,
       setAppearance,
-      preferences,
-      setPreference,
       booking,
       openBooking,
       closeBooking,
@@ -98,7 +88,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       openLook,
       closeLook,
     }),
-    [now, tab, appointments, upcoming, past, saveAppointment, cancel, appearance, preferences, setPreference, booking, openBooking, closeBooking, look, openLook, closeLook],
+    [now, tab, appointments, upcoming, past, saveAppointment, cancel, appearance, booking, openBooking, closeBooking, look, openLook, closeLook],
   )
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

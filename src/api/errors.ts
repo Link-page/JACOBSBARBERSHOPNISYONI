@@ -1,11 +1,13 @@
 /** Reasons the booking backend refuses a request, and what to tell the customer. */
 const messages: Record<string, string> = {
-  slot_unavailable: 'השעה הזו כבר נתפסה. בחרו שעה אחרת.',
+  slot_unavailable: 'התור כבר נתפס. בחרו שעה אחרת.',
   booking_limit: 'יש לכם כבר את מספר התורים המרבי. בטלו תור קיים כדי לקבוע חדש.',
   waitlist_limit: 'אתם כבר רשומים למספר המרבי של רשימות המתנה.',
   too_late_to_change: 'כבר מאוחר מדי לשנות את התור הזה. התקשרו למספרה.',
   slots_available: 'נפתחו שעות פנויות ביום הזה. אפשר לקבוע תור רגיל.',
   invalid_status: 'אי אפשר לשנות תור במצב הזה.',
+  confirmed_locked: 'ההגעה כבר אושרה, ולכן ביטול או שינוי נעשים דרך המספרה.',
+  confirmation_closed: 'המועד לאישור הגעה עבר.',
   not_authenticated: 'צריך להתחבר מחדש.',
   network: 'אין חיבור לשרת. בדקו את החיבור ונסו שוב.',
 }

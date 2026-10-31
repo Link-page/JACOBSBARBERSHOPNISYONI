@@ -29,6 +29,8 @@ export interface BookingApi {
   createAppointment(input: NewAppointment): Promise<Appointment>
   rescheduleAppointment(appointment: Appointment, change: Pick<Appointment, 'barberId' | 'start'>): Promise<Appointment>
   cancelAppointment(id: string): Promise<void>
+  /** Confirms attendance (before the deadline). Afterwards only the shop can cancel or move it. */
+  confirmAttendance(id: string): Promise<Appointment>
 
   joinWaitlist(request: WaitlistRequest): Promise<WaitlistReceipt>
 }

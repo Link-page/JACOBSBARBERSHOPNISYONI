@@ -37,11 +37,17 @@ export const localBookingApi: BookingApi = {
   },
 
   async createAppointment(input) {
-    return appointmentStore.upsert({ id: newId(), status: 'booked', ...input })
+    return appointmentStore.upsert({ id: newId(), status: 'booked', confirmationStatus: 'not_required', confirmationDeadline: null, confirmedAt: null, cancellationReason: null, ...input })
   },
 
   async rescheduleAppointment(appointment, change) {
     return appointmentStore.upsert({ ...appointment, ...change })
+  },
+
+  async confirmAttendance(id) {
+    const appointment = appointmentStore.all().find((a) => a.id === id)
+    if (!appointment) throw new Error('not_found')
+    return appointmentStore.upsert({ ...appointment, confirmationStatus: 'confirmed', confirmedAt: new Date().toISOString() })
   },
 
   async cancelAppointment(id) {

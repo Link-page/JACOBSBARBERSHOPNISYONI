@@ -8,6 +8,12 @@ export type Appointment = {
   start: string
   /** completed / no_show are set by the shop after the visit. */
   status: 'booked' | 'cancelled' | 'completed' | 'no_show'
+  /** Attendance confirmation (see supabase/migrations/0012_attendance.sql). */
+  confirmationStatus: 'pending' | 'confirmed' | 'not_required'
+  /** ISO: confirm before this, or the appointment may be cancelled automatically. */
+  confirmationDeadline: string | null
+  confirmedAt: string | null
+  cancellationReason: 'customer' | 'staff' | 'no_confirmation' | 'system' | null
 }
 
 export type NewAppointment = Pick<Appointment, 'serviceId' | 'barberId' | 'start'>

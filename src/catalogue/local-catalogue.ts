@@ -1,4 +1,4 @@
-import { barbers, services } from '@/data/shop'
+import { barbers, services, shop } from '@/data/shop'
 
 import type { CatalogueApi } from './catalogue-api'
 
@@ -10,8 +10,9 @@ export const localCatalogue: CatalogueApi = {
   async load() {
     return {
       services: services.map(({ id, name, description, duration, price }) => ({ id, name, description, duration, price, active: true })),
-      barbers: barbers.map((b) => ({ id: b.id, name: b.name, initial: b.initial, bio: b.role, photoUrl: null, serviceIds: services.map((s) => s.id), active: true })),
+      barbers: barbers.map((b) => ({ id: b.id, name: b.name, initial: b.initial, bio: b.role, photoUrl: null, serviceIds: services.map((s) => s.id), active: true, whatsapp: '' })),
       gallery: [],
+      contact: { phone: shop.phone, whatsapp: shop.whatsapp },
     }
   },
 }

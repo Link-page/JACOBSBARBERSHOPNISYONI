@@ -15,6 +15,7 @@ import { shop } from '@/data/shop'
 import { GalleryCarousel } from '@/features/gallery/gallery-carousel'
 import { TeamCarousel } from '@/features/team/team-carousel'
 import { formatDuration, formatPrice, fullDate, greeting } from '@/lib/format'
+import { BellButton } from '@/notifications/components/bell-button'
 import { useApp } from '@/store/app-context'
 
 export function HomeScreen() {
@@ -32,11 +33,14 @@ export function HomeScreen() {
       eyebrow={fullDate(now)}
       largeTitle={`${greeting(now)}, ${firstName}`}
       accessory={
-        <button type="button" onClick={() => setTab('profile')} className="pressable rounded-full lg:hidden" aria-label="פרופיל">
-          <Avatar aria-hidden className="size-11">
-            <AvatarFallback className="text-title3">{profile.fullName.charAt(0)}</AvatarFallback>
-          </Avatar>
-        </button>
+        <div className="flex items-center gap-2 lg:hidden">
+          <BellButton />
+          <button type="button" onClick={() => setTab('profile')} className="pressable rounded-full" aria-label="פרופיל">
+            <Avatar aria-hidden className="size-11">
+              <AvatarFallback className="text-title3">{profile.fullName.charAt(0)}</AvatarFallback>
+            </Avatar>
+          </button>
+        </div>
       }
     >
       {/* Desktop: the appointment and the shop's details side by side. */}

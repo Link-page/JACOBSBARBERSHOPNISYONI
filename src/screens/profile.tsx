@@ -1,23 +1,23 @@
-import { AtSign, Bell, Check, LogOut, Mail, MapPin, MessageCircle, Phone, Sparkles } from 'lucide-react'
+import { AtSign, Check, LogOut, Mail, MapPin, MessageCircle, Phone } from 'lucide-react'
 import { useMemo } from 'react'
 
 import { ListGroup, ListRow } from '@/components/list'
 import { ScrollScreen } from '@/components/scroll-screen'
 import { SegmentedControl } from '@/components/segmented-control'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Switch } from '@/components/ui/switch'
 import { useAccount, useCustomer } from '@/account/account-context'
 import { backend } from '@/backend'
 import { useCatalogue } from '@/catalogue/catalogue-context'
 import { shop, user } from '@/data/shop'
 import { formatIlMobile } from '@/lib/phone'
+import { NotificationSettings } from '@/notifications/components/notification-settings'
 import { links } from '@/lib/links'
 import { cn } from '@/lib/utils'
 import { useApp } from '@/store/app-context'
 import type { Appearance } from '@/store/types'
 
 export function ProfileScreen() {
-  const { past, appearance, setAppearance, preferences, setPreference } = useApp()
+  const { past, appearance, setAppearance } = useApp()
   const { barberById } = useCatalogue()
   const profile = useCustomer()
 
@@ -68,27 +68,7 @@ export function ProfileScreen() {
               />
             </div>
           </ListGroup>
-
-          <ListGroup header="התראות" className="mt-9" footer="ההעדפות נשמרות במכשיר הזה.">
-            <ListRow
-              icon={Bell}
-              title="תזכורות לתורים"
-              trailing={
-                <Switch
-                  checked={preferences.reminders}
-                  onCheckedChange={(v) => setPreference('reminders', v)}
-                  aria-label="תזכורות לתורים"
-                />
-              }
-            />
-            <ListRow
-              icon={Sparkles}
-              title="מבצעים ועדכונים"
-              trailing={
-                <Switch checked={preferences.offers} onCheckedChange={(v) => setPreference('offers', v)} aria-label="מבצעים ועדכונים" />
-              }
-            />
-          </ListGroup>
+          <NotificationSettings />
 
           <ListGroup header="יצירת קשר" className="mt-9">
             <ListRow icon={Phone} title="התקשרות למספרה" value={<span dir="ltr">{shop.phone}</span>} chevron href={links.call} />

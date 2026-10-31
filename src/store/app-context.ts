@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react'
 
-import type { Appearance, Appointment, BookingRequest, LookViewer, Preferences, Tab } from './types'
+import type { Appearance, Appointment, BookingRequest, LookViewer, Tab } from './types'
 
 export type AppContextValue = {
   now: Date
@@ -17,8 +17,6 @@ export type AppContextValue = {
 
   appearance: Appearance
   setAppearance: (appearance: Appearance) => void
-  preferences: Preferences
-  setPreference: (key: keyof Preferences, value: boolean) => void
 
   booking: { open: boolean; request: BookingRequest; session: number }
   openBooking: (request?: BookingRequest) => void

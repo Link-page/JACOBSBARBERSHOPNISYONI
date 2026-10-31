@@ -9,6 +9,9 @@ import { ScrollScreen } from '@/components/scroll-screen'
 import { SegmentedControl } from '@/components/segmented-control'
 import { Button } from '@/components/ui/button'
 import { useCatalogue } from '@/catalogue/catalogue-context'
+import { attendanceView, canSelfManage } from '@/features/confirmation/attendance'
+import { AttendancePanel } from '@/features/confirmation/attendance-panel'
+import { WhatsAppCancelButton } from '@/features/confirmation/whatsapp-cancel-button'
 import { useAddToCalendar } from '@/hooks/use-add-to-calendar'
 import { inlineSign } from '@/lib/direction'
 import { endTime, formatPrice, formatTime, relativeDay, shortDate } from '@/lib/format'
@@ -108,9 +111,11 @@ function UpcomingCard({ appointment, onCancel }: { appointment: Appointment; onC
   const barber = barberById(appointment.barberId)
   const start = new Date(appointment.start)
   const time = formatTime(start)
+  const attendance = attendanceView(appointment, now)
 
   return (
     <m.article
+      id={`appointment-${appointment.id}`}
       layout
       initial={{ opacity: 0, scale: 0.96 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -129,18 +134,27 @@ function UpcomingCard({ appointment, onCancel }: { appointment: Appointment; onC
         </div>
         <p className="self-start text-headline font-semibold tabular">{formatPrice(service.price)}</p>
       </div>
+      <div className="mt-4 empty:hidden">
+        <AttendancePanel appointment={appointment} view={attendance} />
+      </div>
       <div className="mt-4 flex gap-2">
-        <Button
-          size="sm"
-          variant="secondary"
-          className="h-10 flex-1"
-          onClick={() => openBooking({ mode: 'reschedule', appointmentId: appointment.id })}
-        >
-          שינוי מועד
-        </Button>
-        <Button size="sm" variant="destructive" className="h-10 flex-1" onClick={onCancel}>
-          ביטול
-        </Button>
+        {canSelfManage(attendance) ? (
+          <>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="h-10 flex-1"
+              onClick={() => openBooking({ mode: 'reschedule', appointmentId: appointment.id })}
+            >
+              שינוי מועד
+            </Button>
+            <Button size="sm" variant="destructive" className="h-10 flex-1" onClick={onCancel}>
+              ביטול
+            </Button>
+          </>
+        ) : (
+          <WhatsAppCancelButton appointment={appointment} className="flex-1" />
+        )}
         <Button size="icon" variant="secondary" className="size-10" onClick={() => addToCalendar(appointment)} aria-label="הוספה ליומן">
           <CalendarPlus />
         </Button>

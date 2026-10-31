@@ -26,12 +26,12 @@ const ADVANCE_DELAY = 240
 
 function initialSelection(request: BookingRequest, existing?: Appointment): Selection {
   if (existing) return { serviceId: existing.serviceId, barberId: existing.barberId }
-  return request.mode === 'new' ? { serviceId: request.serviceId, barberId: request.barberId } : {}
+  return request.mode === 'new' ? { serviceId: request.serviceId, barberId: request.barberId, date: request.date } : {}
 }
 
-/** The first step still missing an answer; pre-filled choices are skipped. */
+/** The first step still missing an answer; pre-filled choices (incl. a day, from a notification) are skipped. */
 const firstStep = (steps: StepId[], selection: Selection): StepId =>
-  steps.find((s) => (s === 'service' && !selection.serviceId) || (s === 'barber' && !selection.barberId)) ?? 'date'
+  steps.find((s) => (s === 'service' && !selection.serviceId) || (s === 'barber' && !selection.barberId)) ?? (selection.date ? 'time' : 'date')
 
 /** Step navigation and selections for the booking sheet. */
 export function useBookingFlow(request: BookingRequest, existing?: Appointment) {

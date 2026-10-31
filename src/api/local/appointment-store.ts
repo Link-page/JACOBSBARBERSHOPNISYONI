@@ -4,7 +4,10 @@ import { newId } from '@/lib/id'
 
 import type { Appointment } from '../types'
 
-const KEY = 'jacobs.demo.appointments.v1'
+const KEY = 'jacobs.demo.appointments.v2'
+
+/** The on-device demo has no confirmation policy. */
+const demoConfirmation = { confirmationStatus: 'not_required', confirmationDeadline: null, confirmedAt: null, cancellationReason: null } as const
 
 /** Nearest day (searching in `step` direction) the shop is open until at least 20:00. */
 function fullDayFrom(date: Date, step: 1 | -1) {
@@ -21,9 +24,9 @@ function fullDayFrom(date: Date, step: 1 | -1) {
 function seed(now: Date): Appointment[] {
   const at = (date: Date, time: string) => combine(dayKey(date), time).toISOString()
   return [
-    { id: newId(), serviceId: 'signature', barberId: 'jacob', start: at(fullDayFrom(addDays(now, 2), 1), '17:30'), status: 'booked' },
-    { id: newId(), serviceId: 'skin-fade', barberId: 'jacob', start: at(fullDayFrom(addDays(now, -23), -1), '12:00'), status: 'completed' },
-    { id: newId(), serviceId: 'cut-beard', barberId: 'jacob', start: at(fullDayFrom(addDays(now, -51), -1), '18:00'), status: 'completed' },
+    { id: newId(), serviceId: 'signature', barberId: 'jacob', start: at(fullDayFrom(addDays(now, 2), 1), '17:30'), status: 'booked', ...demoConfirmation },
+    { id: newId(), serviceId: 'skin-fade', barberId: 'jacob', start: at(fullDayFrom(addDays(now, -23), -1), '12:00'), status: 'completed', ...demoConfirmation },
+    { id: newId(), serviceId: 'cut-beard', barberId: 'jacob', start: at(fullDayFrom(addDays(now, -51), -1), '18:00'), status: 'completed', ...demoConfirmation },
   ]
 }
 

@@ -1,12 +1,13 @@
 import { createContext, useContext } from 'react'
 
-import type { Barber, GalleryItem, Service } from './types'
+import type { Barber, GalleryItem, Service, ShopContact } from './types'
 
 export type CatalogueValue = {
   /** Bookable now (active), in the owner's order. */
   services: Service[]
   barbers: Barber[]
   gallery: GalleryItem[]
+  contact: ShopContact
   /** Any service or barber, including retired ones (past appointments). */
   serviceById: (id: string) => Service
   barberById: (id: string) => Barber

@@ -5,6 +5,7 @@ import { AccountProvider } from '@/account/account-provider'
 import { backend } from '@/backend'
 import { CatalogueProvider } from '@/catalogue/catalogue-provider'
 import { AppShell } from '@/layout/app-shell'
+import { NotificationsProvider } from '@/notifications/notifications-provider'
 import { AppProvider } from '@/store/app-provider'
 
 const loadMotionFeatures = () => import('@/lib/motion-features').then((mod) => mod.default)
@@ -21,7 +22,9 @@ export default function App() {
           <AccountGate>
             <CatalogueProvider api={backend.catalogue}>
               <AppProvider>
-                <AppShell />
+                <NotificationsProvider api={backend.notifications}>
+                  <AppShell />
+                </NotificationsProvider>
               </AppProvider>
             </CatalogueProvider>
           </AccountGate>

@@ -4,7 +4,7 @@ import type { BookingApi } from '../booking-api'
 import { toBookingError } from '../errors'
 import { barberParam, toAppointment, toDay, toNextSlot, toSlot, type AppointmentRow, type DayRow, type NextRow, type SlotRow } from './mappers'
 
-const appointmentColumns = 'id, service_id, barber_id, starts_at, status'
+const appointmentColumns = 'id, service_id, barber_id, starts_at, status, confirmation_status, confirmation_deadline, confirmed_at, cancellation_reason'
 
 /** Unwraps a Supabase result or throws a BookingError the UI can explain. */
 function data<T>(result: { data: T | null; error: unknown }): T {
@@ -60,6 +60,10 @@ export function createSupabaseBookingApi(db: SupabaseClient): BookingApi {
     async rescheduleAppointment(appointment, { barberId, start }) {
       const row = data(await db.rpc('reschedule_appointment', { p_id: appointment.id, p_starts_at: start, p_barber: barberParam(barberId) }))
       return toAppointment(row as AppointmentRow)
+    },
+
+    async confirmAttendance(id) {
+      return toAppointment(data(await db.rpc('confirm_attendance', { p_id: id })) as AppointmentRow)
     },
 
     async cancelAppointment(id) {

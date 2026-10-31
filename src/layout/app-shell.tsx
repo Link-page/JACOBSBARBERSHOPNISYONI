@@ -3,6 +3,7 @@ import type { ComponentType } from 'react'
 import { TabBar } from '@/components/tab-bar'
 import { BookingSheet } from '@/features/booking/booking-sheet'
 import { GalleryViewer } from '@/features/gallery/gallery-viewer'
+import { NotificationCenter } from '@/notifications/components/notification-center'
 import { cn } from '@/lib/utils'
 import { BookingsScreen } from '@/screens/bookings'
 import { HomeScreen } from '@/screens/home'
@@ -12,6 +13,7 @@ import { useApp } from '@/store/app-context'
 import type { Tab } from '@/store/types'
 
 import { DesktopNav } from './desktop-nav'
+import { useInitialDeepLink } from './use-deep-links'
 
 const screens: { id: Tab; Screen: ComponentType }[] = [
   { id: 'home', Screen: HomeScreen },
@@ -26,6 +28,7 @@ const screens: { id: Tab; Screen: ComponentType }[] = [
  */
 export function AppShell() {
   const { tab } = useApp()
+  useInitialDeepLink()
 
   return (
     <div className="h-full bg-background">
@@ -57,6 +60,7 @@ export function AppShell() {
         <GalleryViewer />
       </div>
       <BookingSheet />
+      <NotificationCenter />
     </div>
   )
 }

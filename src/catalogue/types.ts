@@ -22,6 +22,8 @@ export type Barber = {
   /** Services this barber performs. */
   serviceIds: string[]
   active: boolean
+  /** The barber's own WhatsApp (international digits), or '' to use the shop's. */
+  whatsapp: string
 }
 
 export type GalleryItem = {
@@ -33,8 +35,12 @@ export type GalleryItem = {
   serviceId: string | null
 }
 
+/** How customers reach the shop (from business settings). */
+export type ShopContact = { phone: string; whatsapp: string }
+
 export type Catalogue = {
   services: Service[]
   barbers: Barber[]
   gallery: GalleryItem[]
+  contact: ShopContact
 }
