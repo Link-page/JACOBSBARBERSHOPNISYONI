@@ -1,4 +1,5 @@
-# Lint, unit tests, database tests (real migrations on Postgres 16) and a production build.
+# Lint, unit tests, database tests (real migrations on Postgres 16), the push Edge Function
+# on Deno (its runtime), and a production build.
 name: CI
 
 on:
@@ -37,4 +38,10 @@ jobs:
       - run: npm run typecheck:tests
       - run: npm test
       - run: npm run test:db
+      - name: Push Edge Function on Deno (type-check + runtime test)
+        env:
+          DENO: npx --yes deno@2.5.6
+        run: |
+          $DENO check --no-lock --config supabase/functions/push-dispatch/deno.json supabase/functions/push-dispatch/index.ts
+          $DENO test --no-lock --allow-env --allow-read --config supabase/functions/push-dispatch/deno.json supabase/functions/push-dispatch/runtime_test.ts
       - run: npm run build

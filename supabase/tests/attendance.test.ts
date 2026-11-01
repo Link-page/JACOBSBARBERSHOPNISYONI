@@ -174,3 +174,67 @@ describe('scheduler', () => {
     })
   })
 })
+
+describe('confirmation versus the deadline, in two sessions at once', () => {
+  // A real race needs two committed sessions, so this test commits its own rows and removes them afterwards.
+  async function committedBooking(setup: pg.PoolClient, time: string) {
+    const customer = await createUser(setup)
+    const { rows: days } = await setup.query(`select to_char($1::date + 14, 'YYYY-MM-DD') as d`, [await nextWorkingSunday(setup)])
+    await setup.query('begin')
+    const { rows } = await queryAs(setup, customer, book, [SERVICE.signature, await at(setup, days[0].d, time), JACOB, 'לקוח', null])
+    await setup.query('commit')
+    // The deadline is a minute away: the customer may still confirm, and the job acts "two minutes from now".
+    await setup.query(`update public.appointments set confirmation_deadline = now() + interval '1 minute' where id = $1`, [rows[0].id])
+    return { customer, id: rows[0].id as string }
+  }
+  const runJob = (db: pg.PoolClient) => db.query(`select app.run_scheduler(now() + interval '2 minutes') as r`).then((r) => r.rows[0].r)
+  /** Waits until session `pid` is blocked on a lock, so the overlap really happens. */
+  async function waitUntilBlocked(observer: pg.PoolClient, pid: number) {
+    for (let i = 0; i < 100; i++) {
+      const { rows } = await observer.query(`select wait_event_type from pg_stat_activity where pid = $1`, [pid])
+      if (rows[0]?.wait_event_type === 'Lock') return
+      await new Promise((resolve) => setTimeout(resolve, 50))
+    }
+    throw new Error('the confirmation never waited for the lock')
+  }
+
+  it('a confirmation in progress wins; a cancellation already in progress wins', async () => {
+    const [setup, customerSession, job] = [await pool.connect(), await pool.connect(), await pool.connect()]
+    const created: { customer: Actor; id: string }[] = []
+    try {
+      // 1. The customer's confirmation holds the row: the job skips it and, once it commits, leaves it alone.
+      const first = await committedBooking(setup, '12:00')
+      created.push(first)
+      await customerSession.query('begin')
+      await queryAs(customerSession, first.customer, `select public.confirm_attendance($1)`, [first.id])
+      expect((await runJob(job)).cancelled).toBe(0)
+      await customerSession.query('commit')
+      expect((await runJob(job)).cancelled).toBe(0)
+      expect(await row(setup, first.id)).toMatchObject({ status: 'booked', confirmation_status: 'confirmed' })
+
+      // 2. The job cancels first: the customer's confirmation waits for it, then is refused — never "confirmed" on a cancelled time.
+      const second = await committedBooking(setup, '14:00')
+      created.push(second)
+      await job.query('begin')
+      expect((await runJob(job)).cancelled).toBe(1)
+      await customerSession.query('begin')
+      const pid = (await customerSession.query(`select pg_backend_pid() as pid`)).rows[0].pid as number
+      const confirming = errorOf(queryAs(customerSession, second.customer, `select public.confirm_attendance($1)`, [second.id]))
+      await waitUntilBlocked(setup, pid)
+      await job.query('commit')
+      expect(await confirming).toBe('invalid_status')
+      await customerSession.query('rollback')
+      expect(await row(setup, second.id)).toMatchObject({ status: 'cancelled', confirmation_status: 'pending', cancellation_reason: 'no_confirmation' })
+    } finally {
+      for (const db of [customerSession, job]) await db.query('rollback').catch(() => {})
+      const ids = created.map((c) => c.id)
+      const people = created.map((c) => c.customer.id)
+      await setup.query(`delete from public.inbox_messages where profile_id = any($1)`, [people])
+      for (const id of ids) await setup.query(`delete from public.notification_events where dedupe_key like $1`, [`slot-freed:${id}:%`])
+      await setup.query(`delete from public.appointments where id = any($1)`, [ids])
+      await setup.query(`delete from public.customers where profile_id = any($1)`, [people])
+      await setup.query(`delete from auth.users where id = any($1)`, [people])
+      for (const db of [setup, customerSession, job]) db.release()
+    }
+  })
+})

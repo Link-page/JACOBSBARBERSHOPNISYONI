@@ -42,10 +42,10 @@ npm run test:db   # database tests (disposable Postgres 16)
 
 | Tab | What it does |
 | --- | --- |
-| **בית (Home)** | Greeting, next-appointment card with the booked barber's photo (directions, add to calendar, reschedule), booking button with the next free slot, gallery and team as centre-focused carousels, services and prices, hours and map. |
+| **בית (Home)** | Greeting and the notification bell; next-appointment card with the booked barber's photo, attendance confirmation (*אישור הגעה*) and actions (directions, add to calendar, reschedule — or WhatsApp once attendance is confirmed); booking button with the next free slot, gallery and team as centre-focused carousels, services and prices, hours and map. |
 | **גלריה (Gallery)** | The shop's real photos (Supabase Storage), filterable by category; tap one to open it full-screen and book that style. An honest empty state until photos are uploaded. |
-| **התורים (Bookings)** | Upcoming and history: reschedule, cancel (with confirmation), add to calendar, rebook. |
-| **פרופיל (Profile)** | Name, phone, visits, favourite barber, appearance (automatic / light / dark), notification preferences, contact links, and sign-out. |
+| **התורים (Bookings)** | Upcoming and history: confirm attendance, reschedule, cancel (with confirmation), add to calendar, rebook. A confirmed appointment is changed through the shop (WhatsApp). |
+| **פרופיל (Profile)** | Name, phone, visits, favourite barber, appearance (automatic / light / dark), notification preferences (push on this device, reminders, messages from the shop), contact links, and sign-out. |
 
 ### Booking flow
 
@@ -62,6 +62,10 @@ A sheet with five steps: **service → barber → day → time → summary**. Se
 
 With the Supabase variables set, customers sign in or register (email and password, name and Israeli mobile, email confirmation), and everything they see and book comes from the database: services, the real team and their photos, the gallery, their own appointments and waiting-list requests. Without them, the app runs as an on-device demo that says so on every confirmation. Details, security model and the Supabase settings needed before opening registration: **[docs/customer-app.md](docs/customer-app.md)**.
 
+## Notifications and attendance confirmation
+
+An in-app notification centre plus Web Push on Android, desktop and iPhone (from the Home Screen). Attendance is confirmed the day before, and unconfirmed appointments are cancelled automatically at the deadline. Everyone waiting for a day is told when time frees up, and the first to book gets it. A reminder goes out about two hours before a confirmed appointment, and the admin can send messages to customers. Rules, architecture, tests, and the owner's setup steps (migrations 0011–0016, VAPID keys, the push Edge Function, pg_cron): **[docs/notifications.md](docs/notifications.md)**.
+
 ## Architecture
 
 See [docs/customer-app.md](docs/customer-app.md#architecture) for the customer app's modules and [docs/admin.md](docs/admin.md#architecture) for the admin. In short: screens depend on contracts (`AccountApi`, `CatalogueApi`, `BookingApi`); `src/backend/index.ts` picks the Supabase or on-device implementation once; pure domain logic lives in `src/booking/` and is shared with the admin.
@@ -77,3 +81,4 @@ Motion is used for spring selection indicators (calendar day, time row, tabs), d
 - **Contact details**: address, phone, WhatsApp, Instagram and hours in `src/data/shop.ts` are placeholders.
 - **Photos**: upload barber portraits (Team) and gallery photos (Settings → Gallery) in the admin; the app shows them from Supabase Storage.
 - **Registration**: follow [docs/customer-app.md → Before opening registration](docs/customer-app.md#before-opening-registration-supabase-settings).
+- **Notifications**: install migrations 0011–0016 **before** publishing this version, then follow [docs/notifications.md → External setup](docs/notifications.md#external-setup-owner-step-by-step).

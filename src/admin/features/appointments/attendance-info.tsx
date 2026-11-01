@@ -19,6 +19,9 @@ const cancelledBecause: Record<NonNullable<Appointment['cancellationReason']>, s
   system: 'בוטל על ידי המערכת',
 }
 
+/** Possible when auto-cancel is off: still booked, never confirmed. Staff can still confirm by phone. */
+const deadlinePassed = (iso: string | null) => iso !== null && new Date(iso) <= new Date()
+
 const when = (iso: string) => new Date(iso).toLocaleString('he-IL', { weekday: 'long', hour: '2-digit', minute: '2-digit' })
 
 /** Attendance confirmation and cancellation reason, with a by-phone confirm for staff. */
@@ -55,7 +58,9 @@ export function AttendanceInfo({ appointment, onChanged }: { appointment: Appoin
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-[14px] bg-brass-soft px-3 py-2.5">
       <p className="flex items-center gap-2 text-footnote">
         <CalendarCheck className="size-4 text-brass" />
-        ממתין לאישור הגעה{appointment.confirmationDeadline && ` · עד ${when(appointment.confirmationDeadline)}`}
+        {deadlinePassed(appointment.confirmationDeadline)
+          ? `לא אושר עד המועד (${when(appointment.confirmationDeadline!)})`
+          : `ממתין לאישור הגעה${appointment.confirmationDeadline ? ` · עד ${when(appointment.confirmationDeadline)}` : ''}`}
       </p>
       <Button
         size="sm"

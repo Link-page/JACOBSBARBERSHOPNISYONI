@@ -67,7 +67,8 @@ export function BroadcastComposer() {
             המשך לשליחה
           </Button>
         </div>
-        <NotificationPreview title={draft.title} body={draft.body} />
+        {/* Sized to its content, not stretched to the form's height. */}
+        <NotificationPreview title={draft.title} body={draft.body} className="lg:sticky lg:top-6 lg:self-start" />
       </div>
 
       <ResponsiveSheet

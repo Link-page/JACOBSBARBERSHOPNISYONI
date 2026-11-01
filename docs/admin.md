@@ -33,7 +33,7 @@ GitHub Pages serves static files only, so bookings and administration need a hos
 **Trade-offs:**
 - business logic lives partly in SQL, which is less familiar than TypeScript to some developers
 - you're tied to one vendor for Auth, though the data is plain Postgres and portable
-- scheduled jobs (offer expiry) need `pg_cron`
+- scheduled jobs (confirmation requests, auto-cancel, reminders) need `pg_cron`
 
 **Alternatives considered:**
 - **Firebase:** document storage makes overlap constraints and transactions across many records awkward.
@@ -47,7 +47,7 @@ GitHub Pages serves static files only, so bookings and administration need a hos
     - `scripts/check-supabase-env.ts` fails the deploy if one is configured
     - `scripts/check-bundle.ts` fails if any bundle contains one (either key format)
     - the admin refuses to start with one
-- **Default deny.** All table privileges are revoked, then the minimum is granted back. Row-level security is on for all 15 tables.
+- **Default deny.** All table privileges are revoked, then the minimum is granted back. Row-level security is on for all 21 tables. Tables added later revoke Supabase's default grants too (0016 for the notification tables), and the database tests emulate those defaults so a missed revoke fails.
 - **Roles live in `profiles.role`:** `owner`, `barber` or `customer`. New accounts are customers. Only an owner can change roles, through `admin_set_user_role`, and the last owner can't demote themselves.
 - **Appointments and waiting-list entries can only be written through database functions.** Each function:
   - checks the caller's role
@@ -55,7 +55,7 @@ GitHub Pages serves static files only, so bookings and administration need a hos
   - re-validates availability inside the transaction
   - relies on the exclusion constraint as the final guard
 - **Barbers see only their own chair:** its appointments, the customers they serve, and their own time blocks. Customers see only their own records. Anonymous visitors see only the public catalogue and free time slots.
-- **Owner only:** business settings, services, prices, team, closed dates, the outbox and the audit log.
+- **Owner only:** business settings, services, prices, team, closed dates and the audit log. Messages to customers: the owner, and barbers the owner allows (see [notifications.md](notifications.md)).
 - **Refused writes are reported, not swallowed.** Row-level security filters forbidden rows out of an update or delete silently. The adapter treats "zero rows changed" as `forbidden`, so staff never see "saved" for a change that didn't happen.
 - **The audit log** records every change to appointments, the catalogue, customers and settings, with the acting user.
 - **Hiding `/admin` is not security, and it isn't relied on.** The admin page is `noindex`, but every request is authorised by the database.
@@ -67,7 +67,6 @@ A time is bookable for a barber only if all of these hold:
 - it doesn't touch a break
 - it doesn't overlap a time block, either the barber's own or a shop-wide closure
 - it doesn't overlap another active appointment
-- it isn't held by an open waiting-list offer
 
 Service length comes from the barber's own duration for that service when set, otherwise the service default.
 
@@ -79,12 +78,13 @@ Customers also have to respect:
 
 ### Waiting list policy
 
-1. **Joining:** a customer can join only for a day with no free slot for their service and barber choice. There's one active request per customer, service, day and barber choice. Staff can view, offer and remove requests, but they don't create them.
-2. **Offers:** when time frees up through a cancellation, a reschedule or an expired offer, waiting requests for that day are considered oldest first. Each gets at most one offer: the earliest slot that fits.
-3. **Holds:** an open offer holds its slot for that customer until it expires (default 120 minutes), so a slot is never promised twice.
-4. **Claiming:** the customer claims the offer with `claim_waitlist_offer`, which books it atomically.
-5. **Expiry:** `run_waitlist_maintenance` expires unclaimed offers and passes the time to the next request. Run it on a schedule (see setup); staff can also trigger it from the admin.
-6. **Notifications:** each offer queues a message in `notifications` with status `pending`. **Nothing is sent: no SMS or WhatsApp provider is connected.** The admin says so plainly, and staff should phone the customer.
+The full rules, with attendance confirmation and notifications, are in **[notifications.md](notifications.md)**. In short:
+
+1. **Joining:** a customer can join only for a day with no free slot for their service and barber choice. There's one active request per customer, service, day and barber choice. Staff can view and remove requests, but they don't create them.
+2. **Freed time:** when booked time is freed (cancelled, moved, or auto-cancelled for no confirmation), **every** customer waiting for that day whose service fits is notified in the app, with a push when they enabled it.
+3. **No holds, no priority:** the first booking that commits gets the time; the others see *התור כבר נתפס*. Exclusive offers and holds were retired in migration 0013.
+4. **Expiry:** requests for past days expire. The scheduler does it, run every minute by pg_cron; staff can also press *הרצת תזמונים עכשיו*.
+5. **No SMS.** Notifications are in-app and Web Push only.
 
 ## Setup
 
@@ -122,11 +122,11 @@ These steps are needed before the admin can be used for real.
    ```
    Future barbers: invite them, then link them from *צוות → (barber) → גישה לניהול* in the admin.
 
-5. **Schedule offer expiry.** Enable the `pg_cron` extension under *Database → Extensions*, then run:
+5. **Schedule the time-based work.** Enable the `pg_cron` extension under *Database → Extensions*, then run:
    ```sql
-   select cron.schedule('waitlist-maintenance', '*/5 * * * *', 'select public.run_waitlist_maintenance()');
+   select cron.schedule('waitlist-maintenance', '* * * * *', 'select public.run_waitlist_maintenance()');
    ```
-   Check it with `select jobname, schedule from cron.job;`.
+   Check it with `select jobname, schedule from cron.job;`. After migration 0015 this job runs the whole scheduler: confirmation requests, auto-cancel, reminders and waiting-list expiry. Running `cron.schedule` again with the same name updates an existing job. Push delivery needs a second job; see [notifications.md → External setup](notifications.md#external-setup-owner-step-by-step).
 
 6. **Connect the website build.** In GitHub, go to *Settings → Secrets and variables → Actions → Variables* and add:
    - `VITE_SUPABASE_URL`: the Project URL
@@ -174,7 +174,8 @@ Four layers. Each one says plainly what it ran against.
   - completed and no-show outcomes
   - two simultaneous bookings for one slot: exactly one succeeds
   - blocking time, capacity, unblocking
-- **Waiting list:** the full policy. Customers join a full day; a cancellation offers the slot to the oldest request and holds it; claiming books it; expiry passes it on; the outbox shows the queued (unsent) messages.
+- **Waiting list:** customers join a full day; a cancellation notifies every waiting customer and holds nothing; two simultaneous bookings, exactly one wins; exclusive offers are retired.
+- **Notifications and confirmation** (`tests/stack/notifications.test.ts`): confirming locks customer cancellation and moves (staff still cancel, and the customer is told); staff confirm by phone; devices and preferences are private per account; owner broadcasts reach opted-in customers once; customers, signed-out callers and unauthorised barbers are refused.
 - **Catalogue:**
   - settings round trip
   - services create, assign and reorder
@@ -186,13 +187,14 @@ Locally, `npm run test:stack` needs Docker and `npx supabase@2.122.0 start`, the
 **Hosted, read-only** (`tests/hosted/`) covers:
 - the seeded catalogue and the current month's availability are served
 - every private table is closed to anonymous callers
-- all 13 staff and customer functions are installed and closed to anonymous callers
+- all 23 staff, customer and push functions are installed and closed to anonymous callers
+- which notification migrations (0011, 0012, 0014, 0016) are missing, by name
 - a wrong password is rejected
 
 The same job also:
 - validates the variables without printing them
 - proves the build compiled both in, with no secret key in any bundle and none of the Supabase settings in the customer bundle
-- reports what the hosted project still needs (`scripts/report-hosted-readiness.ts`): public sign-up, email confirmation and whether migration 0010 is installed, as warnings
+- reports what the hosted project still needs (`scripts/report-hosted-readiness.ts`): public sign-up, email confirmation, and whether migrations 0010–0016 are installed, as warnings
 
 **Database tests:** locally, set `TEST_DATABASE_URL` to a superuser connection on a throwaway server; the default is `postgres://postgres@127.0.0.1:54329/postgres`. The tests drop and recreate a `jacobs_test` database.
 
@@ -285,10 +287,14 @@ Use a free weekday afternoon **next week**, since Jacob works Sunday–Thursday 
 
 **Waiting list**
 
-The admin manages waiting-list requests, but only customers can create them. The customer app isn't connected yet, so the list is empty. The full flow (join → offer → hold → claim → expiry) is tested on the local Supabase stack and in the database tests.
-- [ ] *המתנה* loads without an error and shows *אין ממתינים*. The barber filter works.
-- [ ] *בדיקת הצעות שפגו* shows *הצעות שפגו הועברו הלאה*.
-- [ ] *הודעות ללקוחות* says no message provider is connected, so nothing is sent.
+The admin manages waiting-list requests, but only customers can create them, from the customer app. The full flow (join → time freed → everyone notified → first booking wins) is tested on the local Supabase stack and in the database tests.
+- [ ] *המתנה* loads without an error. The barber filter works.
+- [ ] *הרצת תזמונים עכשיו* shows *התזמונים הורצו*.
+
+**Notifications and confirmation** (after migrations 0011–0016; full checklist in [notifications.md](notifications.md#external-setup-owner-step-by-step), step 14)
+- [ ] *התראות*: write a title and text; the preview follows; *המשך לשליחה* → *שליחה עכשיו* → *ההודעה נשלחה*, and the history counts it. A second send within 2 minutes is refused.
+- [ ] *הגדרות → אישור הגעה ותזכורות*: the defaults are 10:00 and 20:00; a deadline before the request time can't be saved.
+- [ ] Open an appointment awaiting confirmation → *אישור טלפוני* → it shows *הגעה אושרה*.
 
 **Access**
 - [ ] *יציאה* signs you out. Opening `/admin/` in a private window shows only the sign-in screen, and a wrong password shows *אימייל או סיסמה שגויים*.
@@ -314,18 +320,14 @@ Blocks, closed days and breaks you removed are gone, and hours you changed back 
    - Site URL and redirect URLs set
 
    The *hosted* job in *Supabase verification* reports the first two on every run.
-3. **Offer expiry schedule** (Setup step 5). Without it, an unclaimed waiting-list offer keeps its slot blocked until a staff member presses **בדיקת הצעות שפגו**.
+3. **Scheduler and notifications.** Migrations 0011–0016 installed, and the scheduler running every minute (Setup step 5). Without the scheduler, confirmation requests, auto-cancel and reminders never happen. Push needs the remaining steps in [notifications.md](notifications.md#external-setup-owner-step-by-step); without them, everything still reaches the in-app notification centre.
 4. **Merge to `main`** with the owner's approval. The deploy workflow refuses unsafe Supabase settings, then builds with the variables.
 5. **After deployment,** open `/admin/` on the live site, sign in, and repeat check 1. The live site is confirmed only once this works.
 
 **Known limitations** (not blockers for the admin, but decide on them):
 
-- **The customer app is not connected to Supabase yet.** It still uses its on-device demo data, and bookings made there never reach the admin. Connecting it needs:
-  - a short contact-details step (name and phone) with anonymous or phone sign-in
-  - loading services and team from the database
-
-  The database functions it needs already exist and are tested: `book_appointment`, `join_waitlist`, `claim_waitlist_offer`, `cancel_appointment`.
-- **No SMS or WhatsApp provider is connected.** Offers are queued but not sent.
+- **Customer registration** is ready but waits for the Supabase settings in [customer-app.md → Before opening registration](customer-app.md#before-opening-registration-supabase-settings).
+- **No SMS or WhatsApp provider is connected, by design.** Customer notifications are in-app and Web Push. The WhatsApp button only opens a chat in the customer's own WhatsApp. SMS stays reserved for phone sign-in codes, which aren't built.
 - **No MFA or password-reset screens in the admin.** Use the Supabase dashboard (*Authentication → Users*) meanwhile. The admin does not require MFA.
 - **Barbers can't edit their own breaks yet.** The database allows it; the screen is owner-only for now.
 - **Time zone:** the admin uses the device time zone, which is assumed to be the shop's (`Asia/Jerusalem`).

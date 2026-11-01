@@ -1,7 +1,9 @@
+import { cn } from '@/lib/utils'
+
 /** How the message looks on a phone's lock screen (an approximation; each system draws its own). */
-export function NotificationPreview({ title, body }: { title: string; body: string }) {
+export function NotificationPreview({ title, body, className }: { title: string; body: string; className?: string }) {
   return (
-    <div className="surface-ink grain rounded-[28px] p-4">
+    <div className={cn('surface-ink grain rounded-[28px] p-4', className)}>
       <p className="mb-3 text-center text-caption text-ink-foreground/50">תצוגה מקדימה</p>
       <div className="relative rounded-[18px] bg-white/[0.08] p-3 backdrop-blur">
         <div className="flex items-center gap-2 text-caption text-ink-foreground/60">

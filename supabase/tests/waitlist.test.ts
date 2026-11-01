@@ -37,6 +37,23 @@ describe('waiting list', () => {
     })
   })
 
+  it('notifies waiting customers when an unconfirmed appointment is auto-cancelled', async () => {
+    await isolated(async (db) => {
+      const day = await nextWorkingSunday(db)
+      const { appointmentId } = await fillDay(db, day)
+      const waiting = await createUser(db)
+      await queryAs(db, waiting, join, [SERVICE.signature, day, null, 'ממתין', null])
+      const { rows } = await db.query(`select confirmation_status, confirmation_deadline from public.appointments where id = $1`, [appointmentId])
+      expect(rows[0].confirmation_status).toBe('pending')
+
+      const afterDeadline = new Date(rows[0].confirmation_deadline.getTime() + 60_000)
+      expect((await db.query(`select app.run_scheduler($1::timestamptz) as r`, [afterDeadline])).rows[0].r.cancelled).toBe(1)
+      const inbox = await db.query(`select category from public.inbox_messages where profile_id = $1`, [waiting.id])
+      expect(inbox.rows.map((r) => r.category)).toEqual(['waitlist_available'])
+      expect(await slotTimes(db, SERVICE.signature, day)).toContain('10:00')
+    })
+  })
+
   it('notifies every eligible waiting customer when time frees up, and holds nothing', async () => {
     await isolated(async (db) => {
       const day = await nextWorkingSunday(db)

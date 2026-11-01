@@ -27,6 +27,8 @@ src/
   api/                    BookingApi contract, Supabase implementation, demo implementation, BookingError
   store/                  app state; use-appointments.ts reads/writes through the BookingApi
   components/carousel/    reusable centre-focused carousel (pure maths in carousel-math.ts)
+  notifications/          in-app notification centre and Web Push (see notifications.md)
+  features/confirmation/  attendance confirmation and the WhatsApp request button
   features/team/          team carousel and barber slide
   features/gallery/       gallery carousel, grid tile, viewer, empty state
   layout/                 responsive shell: tab bar (phones/tablets), top navigation (desktop)
@@ -92,7 +94,8 @@ Public sign-up is **off** on the hosted project, and should stay off until every
 | Phone rules, form validation, error mapping, carousel maths, media URLs | Unit tests | `npm test` (CI) |
 | Migration 0010, plus every earlier database rule | Postgres 16 with the migrations | `npm run test:db` (CI) |
 | Customer sign-up, email confirmation, profile, booking flows, catalogue | A real local Supabase stack, through the customer app's own modules (details below) | `tests/stack/customer.test.ts`, *Supabase verification → local stack* |
-| Hosted project | Read-only, signed out: public catalogue, private data closed, functions installed, Auth settings, migration 0010 present | *Supabase verification → hosted* |
+| Notifications and attendance confirmation | Postgres, the local stack, Node + Deno, and browser QA | see [notifications.md → Tests](notifications.md#tests) |
+| Hosted project | Read-only, signed out: public catalogue, private data closed, functions installed, Auth settings, migrations 0010–0016 present | *Supabase verification → hosted* |
 
 The customer stack suite covers:
 - **Sign-up and confirmation:** sign-up, then confirmation through the **real confirmation email** caught by Mailpit
