@@ -49,7 +49,6 @@ export type BarberRow = {
   bio: string
   photo_path: string | null
   whatsapp: string
-  account?: { can_broadcast: boolean } | null
   active: boolean
   sort_order: number
   user_id: string | null
@@ -58,7 +57,8 @@ export type BarberRow = {
   breaks: { weekday: number; start_time: string; end_time: string }[]
 }
 
-export const toBarber = (r: BarberRow): Barber => ({
+/** `canBroadcast`: the linked account's permission to message customers (read separately; staff only). */
+export const toBarber = (r: BarberRow, canBroadcast = false): Barber => ({
   id: r.id,
   name: r.name,
   bio: r.bio,
@@ -66,7 +66,7 @@ export const toBarber = (r: BarberRow): Barber => ({
   active: r.active,
   sortOrder: r.sort_order,
   linkedUserId: r.user_id,
-  linkedCanBroadcast: r.account?.can_broadcast ?? false,
+  linkedCanBroadcast: r.user_id !== null && canBroadcast,
   whatsapp: r.whatsapp ?? '',
   services: r.barber_services.map((s) => ({ serviceId: s.service_id, durationMinutes: s.duration_minutes })),
   hours: r.working_hours.map((h) => ({ weekday: h.weekday, start: hhmm(h.start_time), end: hhmm(h.end_time) })),

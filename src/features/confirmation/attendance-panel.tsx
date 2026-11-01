@@ -45,7 +45,8 @@ export function AttendancePanel({ appointment, view, tone = 'card' }: { appointm
           </p>
         </div>
       </div>
-      <Button className="mt-3 h-11 w-full" variant={ink ? 'secondary' : 'default'} disabled={pending} onClick={() => void confirm(appointment.id)}>
+      {/* On the dark card the button is cream on ink, so it reads as the primary action (not as disabled). */}
+      <Button className={cn('mt-3 h-11 w-full', ink && 'bg-ink-foreground text-[var(--ink-to)]')} disabled={pending} onClick={() => void confirm(appointment.id)}>
         {pending ? <Spinner /> : <CircleCheck className="size-4" />}
         אישור הגעה
       </Button>

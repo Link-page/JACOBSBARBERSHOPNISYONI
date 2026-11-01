@@ -5,12 +5,28 @@ import { changedRows, unwrap } from './client'
 import { toBarber, toService, type BarberRow, type ServiceRow } from './mappers'
 
 const barberColumns =
-  'id, name, bio, photo_path, whatsapp, active, sort_order, user_id, account:profiles!barbers_user_id_fkey(can_broadcast), barber_services(service_id, duration_minutes), working_hours(weekday, start_time, end_time), breaks(weekday, start_time, end_time)'
+  'id, name, bio, photo_path, whatsapp, active, sort_order, user_id, barber_services(service_id, duration_minutes), working_hours(weekday, start_time, end_time), breaks(weekday, start_time, end_time)'
+
+/**
+ * Which linked accounts may message customers (profiles.can_broadcast). Read
+ * apart from the barbers themselves: profiles are private, so signed-out
+ * callers — who may still read the public barber list — get none.
+ */
+async function broadcastPermissions(db: SupabaseClient, rows: BarberRow[]): Promise<Set<string>> {
+  const ids = rows.map((r) => r.user_id).filter((id): id is string => id !== null)
+  if (ids.length === 0 || !(await db.auth.getSession()).data.session) return new Set()
+  const profiles = unwrap(await db.from('profiles').select('id, can_broadcast').in('id', ids).returns<{ id: string; can_broadcast: boolean }[]>())
+  return new Set(profiles.filter((p) => p.can_broadcast).map((p) => p.id))
+}
+
+async function withPermissions(db: SupabaseClient, rows: BarberRow[]) {
+  const allowed = await broadcastPermissions(db, rows)
+  return rows.map((r) => toBarber(r, r.user_id !== null && allowed.has(r.user_id)))
+}
 
 export const createBarbers = (db: SupabaseClient): AdminApi['barbers'] => ({
   async list() {
-    const rows = unwrap(await db.from('barbers').select(barberColumns).order('sort_order').returns<BarberRow[]>())
-    return rows.map(toBarber)
+    return withPermissions(db, unwrap(await db.from('barbers').select(barberColumns).order('sort_order').returns<BarberRow[]>()))
   },
 
   async save(barber) {
@@ -26,7 +42,8 @@ export const createBarbers = (db: SupabaseClient): AdminApi['barbers'] => ({
         p_breaks: barber.breaks,
       }),
     )
-    return toBarber(unwrap(await db.from('barbers').select(barberColumns).eq('id', id).single<BarberRow>()))
+    const [saved] = await withPermissions(db, [unwrap(await db.from('barbers').select(barberColumns).eq('id', id).single<BarberRow>())])
+    return saved
   },
 
   async setAccountRole(email, role, barberId) {

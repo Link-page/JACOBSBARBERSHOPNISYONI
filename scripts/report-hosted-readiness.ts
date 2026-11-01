@@ -1,6 +1,7 @@
 /**
  * Reports what the hosted project still needs before publishing: Auth
- * settings, and whether the latest migration (customer accounts) is installed.
+ * settings, and whether the customer-account (0010) and notification
+ * (0011–0016) migrations are installed.
  * Read-only: it calls the public settings endpoint the sign-in form itself
  * uses, with the publishable key, and never prints the URL or the key.
  * Findings are GitHub warnings, not failures: they are dashboard settings
@@ -59,6 +60,22 @@ report(
     ? 'Could not check for migration 0010 (network error).'
     : 'Migration 0010_customer_accounts.sql is not installed: run it in the SQL Editor before opening customer registration.',
 )
+// Notifications and attendance confirmation (0011–0016). Functions they add answer "permission denied" when installed.
+const notificationMarkers: [string, string, object][] = [
+  ['0011_notifications.sql', 'save_push_subscription', { p_endpoint: 'https://x.invalid', p_p256dh: '', p_auth: '' }],
+  ['0012_attendance.sql', 'confirm_attendance', { p_id: '00000000-0000-0000-0000-000000000000' }],
+  ['0014_broadcasts.sql', 'send_broadcast', { p_title: '', p_body: '', p_audience: '', p_url: null, p_idempotency_key: '00000000-0000-0000-0000-000000000000' }],
+]
+const missingMigrations: string[] = []
+for (const [migration, fn, body] of notificationMarkers) {
+  if ((await functionInstalled(fn, body)) === false) missingMigrations.push(migration)
+}
+report(
+  missingMigrations.length === 0,
+  'Notification and attendance migrations (0011, 0012, 0014) are installed. Confirm 0013, 0015 and 0016 with the SQL check in docs/notifications.md.',
+  `Not installed: ${missingMigrations.join(', ')}. Run 0011–0016 in order in the SQL Editor (docs/notifications.md) BEFORE publishing this version: the app reads the new columns.`,
+)
+
 // Public sign-up is the goal for customers, but only once the per-customer limits (0010) exist.
 const signupOpen = settings.disable_signup !== true
 report(

@@ -4,8 +4,12 @@ import { anonymous, at, createAccount, createOwner, expectAdminError, JACOB, SER
 
 describe.skipIf(!stackAvailable)('access control (real Supabase Auth + RLS, through the admin adapter)', () => {
   it('anonymous visitors get the public catalogue and nothing else', async () => {
-    const { api } = anonymous()
+    const { api, db } = anonymous()
     expect(await api.auth.getState()).toEqual({ status: 'signed-out' })
+    // Notification tables: no table privileges at all for signed-out callers (0016), not just empty results.
+    for (const table of ['push_subscriptions', 'notification_preferences', 'notification_events', 'inbox_messages', 'push_deliveries', 'broadcasts']) {
+      expect((await db.from(table).select('*').limit(1)).error?.code, table).toBe('42501')
+    }
     expect((await api.services.list()).length).toBeGreaterThanOrEqual(6)
     expect((await api.barbers.list()).map((b) => b.id)).toContain(JACOB)
     expect((await api.schedule.daySlots(SERVICE.signature, sunday(), JACOB)).length).toBeGreaterThan(0)
@@ -70,5 +74,11 @@ describe.skipIf(!stackAvailable)('access control (real Supabase Auth + RLS, thro
     const [own] = await noam.api.schedule.daySlots(SERVICE.signature, day, noamChair.id)
     const mine = await noam.api.appointments.create({ customerId: customer.id, barberId: noamChair.id, serviceId: SERVICE.signature, startsAt: own.startsAt, notes: '' })
     expect((await noam.api.appointments.list({ from: day, to: sunday(4) })).map((a) => a.id)).toEqual([mine.id])
+
+    // The owner allows Noam to message customers: the owner sees it; signed-out visitors never see account details.
+    await owner.api.barbers.setBroadcastPermission(noamAccount.id, true)
+    expect((await owner.api.barbers.list()).find((b) => b.id === noamChair.id)).toMatchObject({ linkedUserId: noamAccount.id, linkedCanBroadcast: true })
+    expect((await anonymous().api.barbers.list()).every((b) => !b.linkedCanBroadcast)).toBe(true)
+    expect(await (await signIn(noamAccount)).api.auth.getState()).toMatchObject({ staff: { canBroadcast: true } })
   })
 })

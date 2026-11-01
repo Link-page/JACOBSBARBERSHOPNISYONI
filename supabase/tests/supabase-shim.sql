@@ -1,4 +1,6 @@
--- Test-only stand-in for what Supabase provides: API roles, auth.users and auth.uid().
+-- Test-only stand-in for what Supabase provides: API roles, auth.users and auth.uid(),
+-- and Supabase's default privileges (new public tables and functions are granted to the
+-- API roles), so tests catch a migration that forgets to revoke them.
 -- auth.uid() reads the JWT subject the same way Supabase does.
 do $$ begin
   if not exists (select 1 from pg_roles where rolname = 'anon') then create role anon nologin; end if;
@@ -20,3 +22,7 @@ $$;
 grant usage on schema auth to anon, authenticated;
 grant execute on function auth.uid() to anon, authenticated;
 grant usage on schema public to anon, authenticated;
+
+alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
+alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;

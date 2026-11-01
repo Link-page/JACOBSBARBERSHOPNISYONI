@@ -37,7 +37,8 @@ describe.skipIf(!stackAvailable)('waiting list (real Supabase): everyone is noti
       expect(data).toEqual([{ category: 'waitlist_available', url: expect.stringContaining(`date=${day}`) }])
     }
     expect((await owner.api.waitlist.list(range)).map((e) => e.status)).toEqual(['waiting', 'waiting'])
-    expect((await owner.api.schedule.daySlots(SERVICE.signature, day, JACOB)).map((s) => s.startsAt)).toContain(at(day, '10:00'))
+    const freed = (await owner.api.schedule.daySlots(SERVICE.signature, day, JACOB)).map((s) => new Date(s.startsAt).toISOString())
+    expect(freed).toContain(at(day, '10:00'))
 
     // Both try to book it at once: exactly one wins; the other hears the time is taken.
     const book = (s: Session) => s.db.rpc('book_appointment', { p_service: SERVICE.signature, p_starts_at: at(day, '10:00'), p_barber: JACOB })

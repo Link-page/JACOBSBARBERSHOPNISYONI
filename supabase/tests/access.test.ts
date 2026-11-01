@@ -13,7 +13,10 @@ describe('anonymous visitors', () => {
       const day = await nextWorkingSunday(db)
       expect((await queryAs(db, anon, `select name from public.services`)).rows.length).toBeGreaterThan(0)
       expect((await queryAs(db, anon, `select * from public.get_day_slots($1, $2::date)`, [SERVICE.signature, day])).rows.length).toBeGreaterThan(0)
-      for (const table of ['customers', 'appointments', 'customer_notes', 'waitlist_entries', 'profiles', 'audit_log', 'notifications', 'time_blocks']) {
+      for (const table of [
+        'customers', 'appointments', 'customer_notes', 'waitlist_entries', 'profiles', 'audit_log', 'notifications', 'time_blocks',
+        'push_subscriptions', 'notification_preferences', 'notification_events', 'inbox_messages', 'push_deliveries', 'broadcasts',
+      ]) {
         expect(await errorOf(queryAs(db, anon, `select * from public.${table}`)), table).toMatch(/permission denied/)
       }
       expect(await errorOf(queryAs(db, anon, `select * from public.staff_day_capacity(current_date)`))).toMatch(/permission denied/)
